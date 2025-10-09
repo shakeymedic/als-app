@@ -124,48 +124,62 @@
                     </button>
                  </div>
             </div>
-
-             <!-- Manual Drug Entry Section -->
-            <div id="manual-drug-container" class="bg-white p-4 rounded-xl shadow-lg hidden">
-                <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Manual Entry</h3>
-                <div class="space-y-2">
-                    <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-3 rounded-lg shadow-sm text-sm">Give Adrenaline 1mg</button>
-                    <button data-drug="amio300" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-3 rounded-lg shadow-sm text-sm">Give Amiodarone 300mg</button>
-                    <button data-drug="amio150" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-3 rounded-lg shadow-sm text-sm">Give Amiodarone 150mg</button>
-                    <div class="pt-2 mt-2 border-t">
-                        <button data-drug="fluid500" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-3 rounded-lg shadow-sm text-sm">Fluid Bolus 500ml</button>
-                    </div>
-                    <button data-drug="fluid1000" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-3 rounded-lg shadow-sm text-sm">Fluid Bolus 1000ml</button>
-                </div>
-            </div>
-
-            <!-- Handover/Notes Section -->
-            <div id="notes-container" class="bg-white p-4 rounded-xl shadow-lg hidden">
-                <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
-                <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes for handover..."></textarea>
-            </div>
-
-            <!-- Interventions Section -->
-            <div id="interventions-container" class="bg-white p-4 rounded-xl shadow-lg hidden">
-                <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions</h3>
-                <div id="interventions-checklist" class="space-y-2">
-                    <!-- Checklist will be populated by JavaScript -->
-                </div>
-                <div class="mt-4 pt-4 border-t border-slate-200">
-                    <div class="flex space-x-2">
-                        <input type="text" id="custom-intervention-input" placeholder="Add custom intervention..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                        <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center">
-                            <i data-lucide="plus" class="w-4 h-4 m-0"></i>
+            
+             <!-- Left Panel Tabs -->
+            <div id="left-panel-tabs-container" class="bg-white rounded-xl shadow-lg hidden">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex justify-around" aria-label="Tabs">
+                        <button id="left-tab-checklists" class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm border-blue-500 text-blue-600" aria-current="page">
+                            Checklists
                         </button>
-                    </div>
+                        <button id="left-tab-inputs" class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            Inputs
+                        </button>
+                    </nav>
                 </div>
-            </div>
 
-            <!-- Reversible Causes Section -->
-            <div id="reversible-causes-container" class="bg-white p-4 rounded-xl shadow-lg hidden">
-                <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
-                <div id="causes-checklist" class="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <!-- Checklist will be populated by JavaScript -->
+                <!-- Tab Content -->
+                <div id="left-panel-content" class="p-4">
+                    <div id="left-tab-content-checklists">
+                        <!-- Interventions Section -->
+                        <div id="interventions-container">
+                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions</h3>
+                            <div id="interventions-checklist" class="space-y-2"></div>
+                            <div class="mt-4 pt-4 border-t border-slate-200">
+                                <div class="flex space-x-2">
+                                    <input type="text" id="custom-intervention-input" placeholder="Add custom intervention..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                                    <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center">
+                                        <i data-lucide="plus" class="w-4 h-4 m-0"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Reversible Causes Section -->
+                        <div id="reversible-causes-container" class="mt-4 pt-4 border-t border-slate-200">
+                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
+                            <div id="causes-checklist"></div>
+                        </div>
+                    </div>
+                    <div id="left-tab-content-inputs" class="hidden">
+                        <!-- Handover/Notes Section -->
+                        <div id="notes-container">
+                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
+                            <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes for handover..."></textarea>
+                        </div>
+                        <!-- Manual Drug Entry Section -->
+                        <div id="manual-drug-container" class="mt-4 pt-4 border-t border-slate-200">
+                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Manual Entry</h3>
+                            <div class="space-y-2">
+                                <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Adrenaline 1mg</button>
+                                <button data-drug="amio300" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 300mg</button>
+                                <button data-drug="amio150" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 150mg</button>
+                                <div class="pt-2 mt-2 border-t">
+                                    <button data-drug="fluid500" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 500ml</button>
+                                </div>
+                                <button data-drug="fluid1000" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 1000ml</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -261,15 +275,18 @@
         const copyLogBtn = document.getElementById('copy-log-btn');
         const printLogBtn = document.getElementById('print-log-btn');
         
-        const notesContainer = document.getElementById('notes-container');
-        const handoverNotes = document.getElementById('handover-notes');
-        const manualDrugContainer = document.getElementById('manual-drug-container');
-        const interventionsContainer = document.getElementById('interventions-container');
-        const interventionsChecklist = document.getElementById('interventions-checklist');
+        const leftPanelTabsContainer = document.getElementById('left-panel-tabs-container');
+        const leftTabChecklists = document.getElementById('left-tab-checklists');
+        const leftTabInputs = document.getElementById('left-tab-inputs');
+        const leftTabContentChecklists = document.getElementById('left-tab-content-checklists');
+        const leftTabContentInputs = document.getElementById('left-tab-content-inputs');
+
         const customInterventionInput = document.getElementById('custom-intervention-input');
         const addInterventionBtn = document.getElementById('add-intervention-btn');
-        const reversibleCausesContainer = document.getElementById('reversible-causes-container');
+        const interventionsChecklist = document.getElementById('interventions-checklist');
         const causesChecklist = document.getElementById('causes-checklist');
+        const manualDrugContainer = document.getElementById('manual-drug-container');
+
 
         // --- Data for Checklists ---
         const standardInterventions = [
@@ -523,10 +540,7 @@
             rearrestBtn.classList.toggle('hidden', !isPostRosc);
             manualCheckBtn.classList.toggle('hidden', !state.isCprInProgress);
             
-            notesContainer.classList.toggle('hidden', !state.isArrestActive);
-            manualDrugContainer.classList.toggle('hidden', !state.isArrestActive);
-            interventionsContainer.classList.toggle('hidden', !state.isArrestActive);
-            reversibleCausesContainer.classList.toggle('hidden', !state.isArrestActive);
+            leftPanelTabsContainer.classList.toggle('hidden', !state.isArrestActive);
 
             if (state.isArrestActive) {
                 endArrestBtn.classList.remove('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
@@ -719,9 +733,11 @@
             document.querySelectorAll('#interventions-checklist input, #causes-checklist input').forEach(cb => {
                 cb.checked = false;
             });
+            document.querySelectorAll('#causes-checklist input[type="radio"]').forEach(rb => {
+                rb.disabled = true;
+            });
             customInterventionInput.value = '';
-            handoverNotes.value = '';
-
+            
             updateUI();
         };
 
@@ -827,7 +843,7 @@
         });
 
         // --- Tab Navigation & Copy ---
-        function setActiveTab(activeTab) {
+        function setMainActiveTab(activeTab) {
             const tabs = [guidanceTab, logTab, specialCircsTab];
             const contents = [guidanceContent, logContent, specialCircsContent];
 
@@ -847,12 +863,31 @@
             const showLogButtons = activeTab === logTab && state.log.length > 0;
             copyLogBtn.classList.toggle('hidden', !showLogButtons);
             printLogBtn.classList.toggle('hidden', !showLogButtons);
-
         }
 
-        guidanceTab.addEventListener('click', () => setActiveTab(guidanceTab));
-        logTab.addEventListener('click', () => setActiveTab(logTab));
-        specialCircsTab.addEventListener('click', () => setActiveTab(specialCircsTab));
+        function setLeftActiveTab(activeTab) {
+            const tabs = [leftTabChecklists, leftTabInputs];
+            const contents = [leftTabContentChecklists, leftTabContentInputs];
+
+            tabs.forEach((tab, index) => {
+                const content = contents[index];
+                if (tab === activeTab) {
+                    tab.classList.add('border-blue-500', 'text-blue-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500');
+                    content.classList.remove('hidden');
+                } else {
+                    tab.classList.remove('border-blue-500', 'text-blue-600');
+                    tab.classList.add('border-transparent', 'text-gray-500');
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        guidanceTab.addEventListener('click', () => setMainActiveTab(guidanceTab));
+        logTab.addEventListener('click', () => setMainActiveTab(logTab));
+        specialCircsTab.addEventListener('click', () => setMainActiveTab(specialCircsTab));
+        leftTabChecklists.addEventListener('click', () => setLeftActiveTab(leftTabChecklists));
+        leftTabInputs.addEventListener('click', () => setLeftActiveTab(leftTabInputs));
         
         const handlePrintLog = () => {
             window.print();
@@ -900,6 +935,28 @@
                     <label for="chk-${item.id}" class="ml-2 text-sm font-medium text-slate-700">${item.name}</label>
                 </div>
             `).join('');
+        };
+        
+        const populateReversibleCausesChecklist = () => {
+            let html = `
+                <div class="grid grid-cols-5 gap-x-2 mb-2 pb-1 border-b text-xs font-bold text-slate-500 text-center">
+                    <div class="col-span-3 text-left">Cause</div>
+                    <div>Treated</div>
+                    <div>Likely</div>
+                </div>
+            `;
+            html += reversibleCauses.map(item => `
+                <div class="grid grid-cols-5 gap-x-2 items-center mb-1">
+                    <div class="col-span-3 text-sm font-medium text-slate-700">${item.name}</div>
+                    <div class="text-center">
+                        <input id="chk-cause-${item.id}" data-name="${item.name}" data-type="treated" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                    </div>
+                    <div class="text-center">
+                        <input id="rad-cause-${item.id}" name="likely-cause-radio" data-name="${item.name}" data-type="likely" type="radio" class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 focus:ring-red-500 disabled:opacity-50" disabled>
+                    </div>
+                </div>
+            `).join('');
+            causesChecklist.innerHTML = html;
         };
         
         const populateSpecialCircs = () => {
@@ -987,7 +1044,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             populateChecklist(interventionsChecklist, standardInterventions);
-            populateChecklist(causesChecklist, reversibleCauses);
+            populateReversibleCausesChecklist();
             populateSpecialCircs();
 
             // Add listeners for checklists
@@ -1002,12 +1059,26 @@
                 }
             });
             causesChecklist.addEventListener('change', (e) => {
-                if (e.target.type === 'checkbox') {
-                     const causeName = e.target.dataset.name;
-                    if (e.target.checked) {
+                const target = e.target;
+                const causeName = target.dataset.name;
+
+                if (target.dataset.type === 'treated') {
+                    const radioId = target.id.replace('chk-cause-', 'rad-cause-');
+                    const radio = document.getElementById(radioId);
+                    if (radio) {
+                        radio.disabled = !target.checked;
+                        if (!target.checked) {
+                            radio.checked = false;
+                        }
+                    }
+                    if (target.checked) {
                         addLog(`Reversible cause addressed: ${causeName}`);
                     } else {
                         addLog(`Reversible cause cleared: ${causeName}`);
+                    }
+                } else if (target.dataset.type === 'likely') {
+                    if (target.checked) {
+                        addLog(`Reversible cause marked as likely: ${causeName}`);
                     }
                 }
             });
