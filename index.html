@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ALS Cardiac Arrest Guide</title>
     
+    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Lucide Icons for UI elements -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -66,27 +69,24 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-    <!-- 
-      FIXED HEADER SECTION: 
-      Added the missing </div> tag after the logo's div to correct the three-column layout.
-    -->
     <div class="flex items-center justify-between p-2 bg-white shadow-sm border-b border-slate-200 print:hidden">
         <div class="w-1/3 flex justify-start pl-4">
             <img src="https://iili.io/KGQOvkl.md.png" alt="WMEBEM Logo" class="h-10">
         </div>
         <div class="w-1/3 text-center">
-            <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20ALS%20algorithm%202025.pdf" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center justify-center">
+            <a href="https://www.resus.org.uk/sites/default/files/2024-01/Adult%20Advanced%20Life%20Support%20Algorithm%202021%20Aug%202023.pdf" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center justify-center">
                 <i data-lucide="book-open" class="lucide-sm"></i>
                 View Official RCUK ALS Algorithm
             </a>
         </div>
-        <div class="w-1/3"></div>
+        <div class="w-1/3"></div> <!-- Empty div for spacing -->
     </div>
-    <!-- End of fixed header section -->
 
     <div id="app-container" class="p-4 flex flex-col md:flex-row md:space-x-4 print:hidden">
         
-        <div class="w-full md:w-1/3 lg:w-1/4 flex flex-col space-y-4 mb-4 md:mb-0">
+        <!-- Left Panel: Controls, Timers, and Checklists -->
+        <!-- Adjusted width: md:w-2/5 lg:w-1/3 -->
+        <div class="w-full md:w-2/5 lg:w-1/3 flex flex-col space-y-4 mb-4 md:mb-0">
             <div id="timer-container" class="bg-white p-4 rounded-xl shadow-lg">
                 <h3 class="font-bold text-lg mb-2 text-center text-slate-600">Timers</h3>
                 <div id="timer-display-normal" class="text-center">
@@ -126,60 +126,47 @@
                  </div>
             </div>
             
-             <div id="left-panel-tabs-container" class="bg-white rounded-xl shadow-lg hidden">
-                <div class="border-b border-gray-200">
-                    <nav class="-mb-px flex justify-around" aria-label="Tabs">
-                        <button id="left-tab-checklists" class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm border-blue-500 text-blue-600" aria-current="page">
-                            Checklists
-                        </button>
-                        <button id="left-tab-inputs" class="w-1/2 py-3 px-1 text-center border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                            Inputs
-                        </button>
-                    </nav>
-                </div>
+             <!-- Combined Panel for Checklists and Inputs -->
+            <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
+                 <!-- Interventions & Manual Entry Section -->
+                 <div id="interventions-combined-container">
+                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions & Manual Entry</h3>
+                     <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-2">
+                         <!-- Standard Intervention Buttons -->
+                         <!-- Manual Entry Buttons -->
+                         <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Adrenaline 1mg</button>
+                         <button data-drug="amio300" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 300mg</button>
+                         <button data-drug="amio150" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 150mg</button>
+                         <button data-drug="fluid500" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 500ml</button>
+                         <button data-drug="fluid1000" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 1000ml</button>
+                     </div>
+                     <div class="mt-4 pt-4 border-t border-slate-200">
+                         <div class="flex space-x-2">
+                             <input type="text" id="custom-intervention-input" placeholder="Add custom..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                             <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center">
+                                 <i data-lucide="plus" class="w-4 h-4 m-0"></i>
+                             </button>
+                         </div>
+                     </div>
+                 </div>
 
-                <div id="left-panel-content" class="p-4">
-                    <div id="left-tab-content-checklists">
-                        <div id="interventions-container">
-                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions</h3>
-                            <div id="interventions-checklist" class="space-y-2"></div>
-                            <div class="mt-4 pt-4 border-t border-slate-200">
-                                <div class="flex space-x-2">
-                                    <input type="text" id="custom-intervention-input" placeholder="Add custom intervention..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                                    <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center">
-                                        <i data-lucide="plus" class="w-4 h-4 m-0"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="reversible-causes-container" class="mt-4 pt-4 border-t border-slate-200">
-                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
-                            <div id="causes-checklist"></div>
-                        </div>
-                    </div>
-                    <div id="left-tab-content-inputs" class="hidden">
-                        <div id="notes-container">
-                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
-                            <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes for handover..."></textarea>
-                        </div>
-                        <div id="manual-drug-container" class="mt-4 pt-4 border-t border-slate-200">
-                            <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Manual Entry</h3>
-                            <div class="space-y-2">
-                                <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Adrenaline 1mg</button>
-                                <button data-drug="amio300" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 300mg</button>
-                                <button data-drug="amio150" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Give Amiodarone 150mg</button>
-                                <div class="pt-2 mt-2 border-t">
-                                    <button data-drug="fluid500" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 500ml</button>
-                                </div>
-                                <button data-drug="fluid1000" class="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">Fluid Bolus 1000ml</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                 <!-- Reversible Causes Section -->
+                 <div id="reversible-causes-container" class="mt-4 pt-4 border-t border-slate-200">
+                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
+                     <div id="causes-checklist"></div>
+                 </div>
+
+                 <!-- Handover/Notes Section -->
+                 <div id="notes-container" class="mt-4 pt-4 border-t border-slate-200">
+                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
+                     <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes..."></textarea>
+                 </div>
             </div>
         </div>
 
-        <div class="w-full md:w-2/3 lg:w-3/4 bg-white p-4 sm:p-6 rounded-xl shadow-lg">
+        <!-- Right Panel: Guidance and Log -->
+         <!-- Adjusted width: md:w-3/5 lg:w-2/3 -->
+        <div class="w-full md:w-3/5 lg:w-2/3 bg-white p-4 sm:p-6 rounded-xl shadow-lg">
             <div class="border-b border-slate-200 mb-4 flex justify-between items-center">
                 <nav class="-mb-px flex space-x-6 overflow-x-auto">
                     <button id="guidance-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-blue-500 text-blue-600">
@@ -206,14 +193,18 @@
                 </div>
             </div>
             <div id="content-area" class="h-[calc(100%-50px)] overflow-y-auto pr-2 custom-scrollbar">
+                <!-- Guidance content will be injected here -->
                 <div id="guidance-content"></div>
+                <!-- Log content will be injected here -->
                 <div id="log-content" class="hidden"></div>
+                <!-- Special circumstances content will be injected here -->
                 <div id="special-circs-content" class="hidden"></div>
             </div>
         </div>
 
     </div>
 
+    <!-- Tone.js library for metronome -->
     <script type="module">
         import * as Tone from "https://cdn.skypack.dev/tone";
 
@@ -265,17 +256,13 @@
         const copyLogBtn = document.getElementById('copy-log-btn');
         const printLogBtn = document.getElementById('print-log-btn');
         
-        const leftPanelTabsContainer = document.getElementById('left-panel-tabs-container');
-        const leftTabChecklists = document.getElementById('left-tab-checklists');
-        const leftTabInputs = document.getElementById('left-tab-inputs');
-        const leftTabContentChecklists = document.getElementById('left-tab-content-checklists');
-        const leftTabContentInputs = document.getElementById('left-tab-content-inputs');
+        const leftPanelCombinedContainer = document.getElementById('left-panel-combined'); // New combined container
 
         const customInterventionInput = document.getElementById('custom-intervention-input');
         const addInterventionBtn = document.getElementById('add-intervention-btn');
-        const interventionsChecklist = document.getElementById('interventions-checklist');
+        const interventionsButtonsGrid = document.getElementById('interventions-buttons-grid'); // Changed container
         const causesChecklist = document.getElementById('causes-checklist');
-        const manualDrugContainer = document.getElementById('manual-drug-container');
+        const notesContainer = document.getElementById('notes-container'); // Need reference for show/hide
 
 
         // --- Data for Checklists ---
@@ -285,7 +272,7 @@
             { id: 'io-access', name: 'IO Access' },
             { id: 'art-line', name: 'Arterial Line Inserted' },
             { id: 'echo', name: 'Echo/USS Performed'},
-            { id: 'fluids', name: 'Fluids Administered' },
+            // Note: Fluids are now handled via manual entry buttons
         ];
 
         const reversibleCauses = [
@@ -316,6 +303,23 @@
             };
             state.log = [newLogEntry, ...state.log].sort((a,b) => a.elapsed - b.elapsed); // Keep log sorted by time
             renderLog();
+        };
+        
+        // --- Visual Feedback for Buttons ---
+        const provideButtonFeedback = (button) => {
+            const originalText = button.innerHTML;
+            button.innerHTML = `Logged ✓`;
+            const originalClasses = Array.from(button.classList);
+             // Ensure the base classes are consistent before applying green
+            const baseClasses = "w-full text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm";
+            button.className = `${baseClasses} bg-green-500`; // Apply green feedback
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.className = originalClasses.join(' ');
+                button.disabled = false;
+            }, 1500);
         };
 
         // --- UI Rendering ---
@@ -424,17 +428,11 @@
                     const notGivenThisCycle = state.lastAdrenalineCycle < state.cycleCount;
                     let adrenalineIsDue = false;
 
-                    // UPDATED 2025 LOGIC: For non-shockable, give adrenaline immediately in the first cycle.
-                    if (state.algorithmPath === 'NON_SHOCKABLE' && state.adrenalineCount === 0) {
-                        adrenalineIsDue = true;
-                    } 
-                    // For subsequent non-shockable doses and all applicable shockable doses, use the alternate cycle rule.
-                    else if (state.algorithmPath === 'SHOCKABLE' && state.shocksDelivered >= 3 && isAlternateCycle) {
+                    if (state.algorithmPath === 'SHOCKABLE' && state.shocksDelivered >= 3 && isAlternateCycle) {
                         adrenalineIsDue = true;
                     } else if (state.algorithmPath === 'NON_SHOCKABLE' && isAlternateCycle) {
                         adrenalineIsDue = true;
                     }
-
 
                     if (adrenalineIsDue && notGivenThisCycle) {
                         const reasonText = state.algorithmPath === 'NON_SHOCKABLE' && state.adrenalineCount === 0
@@ -504,24 +502,21 @@
                     break;
                 case 'POST_ROSC':
                     content = `
-                        <div class="p-4 bg-green-100 rounded-lg">
-                            <h2 class="text-2xl font-bold text-green-600 flex items-center justify-center mb-4">
-                                <i data-lucide="check-circle" class="mr-2"></i>ROSC Achieved
-                            </h2>
-                            <p class="text-slate-700 mb-4 text-center">Proceed with the immediate post-cardiac arrest care plan.</p>
-                            <ul class="text-left list-disc list-inside text-slate-600 space-y-2 mb-6">
-                                <li><strong>Airway & Breathing:</strong> Use an ABCDE approach. Secure the airway if not already done. Aim for SpO₂ 94-98% and normocapnia (ETCO₂ 4.5-6.0 kPa or PaCO₂ 35-45 mmHg).</li>
-                                <li><strong>Circulation:</strong> Obtain 12-lead ECG. If ST-elevation is present, proceed to immediate coronary angiography (PCI). Maintain a target systolic blood pressure (e.g., >100 mmHg) and consider fluids or vasopressors.</li>
-                                <li><strong>Disability:</strong> Assess conscious level. Control seizures with benzodiazepines. Initiate targeted temperature management (32-36°C) for all patients who remain comatose after ROSC.</li>
-                                <li><strong>Exposure & Investigations:</strong> Identify and treat precipitating causes (4Hs and 4Ts). Perform investigations such as chest X-ray, VBG/ABG, and check electrolytes and glucose.</li>
-                                <li><strong>Prognostication:</strong> A multimodal approach to prognostication should be undertaken no earlier than 72 hours after ROSC.</li>
+                        <div class="text-center p-4 bg-green-100 rounded-lg">
+                            <h2 class="text-2xl font-bold text-green-600 flex items-center justify-center"><i data-lucide="check-circle" class="mr-2"></i>ROSC Achieved</h2>
+                            <p class="text-slate-700 mt-2 mb-4">Proceed with post-resuscitation care.</p>
+                            <ul class="text-left list-disc list-inside text-slate-600 space-y-2">
+                                <li>Use ABCDE approach to stabilise patient.</li>
+                                <li>Aim for SpO2 94-98%.</li>
+                                <li>Aim for normal CO2 (check ventilation).</li>
+                                <li>12-lead ECG.</li>
+                                <li>VBG / ABG.</li>
+                                <li>Chest X-ray.</li>
+                                <li>Treat precipitating cause (4Hs and 4Ts).</li>
+                                <li>Temperature control (target 32-36°C).</li>
+                                <li>Cardiology Review.</li>
+                                <li>ICU Review.</li>
                             </ul>
-                            <div class="text-center mt-4">
-                                <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center justify-center">
-                                    <i data-lucide="book-open" class="lucide-sm"></i>
-                                    View Official RCUK Post-Resuscitation Care Algorithm
-                                </a>
-                            </div>
                         </div>`;
                     break;
             }
@@ -529,10 +524,6 @@
             lucide.createIcons();
         };
 
-        /* FIXED SCRIPT SECTION: 
-          Restored the 'else' block of the 'updateUI' function, which was 
-          corrupted with code from the click handler.
-        */
         const updateUI = () => {
             timerDisplayNormal.classList.toggle('hidden', state.isRearrestActive);
             timerDisplayRearrest.classList.toggle('hidden', !state.isRearrestActive);
@@ -543,13 +534,12 @@
             rearrestBtn.classList.toggle('hidden', !isPostRosc);
             manualCheckBtn.classList.toggle('hidden', !state.isCprInProgress);
             
-            leftPanelTabsContainer.classList.toggle('hidden', !state.isArrestActive);
+            leftPanelCombinedContainer.classList.toggle('hidden', !state.isArrestActive); // Toggle the combined container
 
             if (state.isArrestActive) {
                 endArrestBtn.classList.remove('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
                 endArrestBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
             } else {
-                // This block was corrupted. It is now fixed.
                 endArrestBtn.classList.add('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
                 endArrestBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white');
             }
@@ -734,8 +724,12 @@
             if (isMetronomeOn) handleToggleMetronome();
 
             // Reset checklists and custom input
-            document.querySelectorAll('#interventions-checklist input, #causes-checklist input').forEach(cb => {
-                cb.checked = false;
+            document.querySelectorAll('#interventions-buttons-grid button, #causes-checklist input').forEach(el => {
+                 if (el.tagName === 'BUTTON') {
+                     // Reset button state if needed (optional) - might need if feedback state persists
+                 } else if (el.type === 'checkbox' || el.type === 'radio') {
+                     el.checked = false;
+                 }
             });
             document.querySelectorAll('#causes-checklist input[type="radio"]').forEach(rb => {
                 rb.disabled = true;
@@ -869,29 +863,12 @@
             printLogBtn.classList.toggle('hidden', !showLogButtons);
         }
 
-        function setLeftActiveTab(activeTab) {
-            const tabs = [leftTabChecklists, leftTabInputs];
-            const contents = [leftTabContentChecklists, leftTabContentInputs];
-
-            tabs.forEach((tab, index) => {
-                const content = contents[index];
-                if (tab === activeTab) {
-                    tab.classList.add('border-blue-500', 'text-blue-600');
-                    tab.classList.remove('border-transparent', 'text-gray-500');
-                    content.classList.remove('hidden');
-                } else {
-                    tab.classList.remove('border-blue-500', 'text-blue-600');
-                    tab.classList.add('border-transparent', 'text-gray-500');
-                    content.classList.add('hidden');
-                }
-            });
-        }
+       // Removed setLeftActiveTab function as tabs are gone
 
         guidanceTab.addEventListener('click', () => setMainActiveTab(guidanceTab));
         logTab.addEventListener('click', () => setMainActiveTab(logTab));
         specialCircsTab.addEventListener('click', () => setMainActiveTab(specialCircsTab));
-        leftTabChecklists.addEventListener('click', () => setLeftActiveTab(leftTabChecklists));
-        leftTabInputs.addEventListener('click', () => setLeftActiveTab(leftTabInputs));
+        // Removed listeners for leftTabChecklists and leftTabInputs
         
         const handlePrintLog = () => {
             window.print();
@@ -932,13 +909,21 @@
         });
 
         // --- Initialization ---
-        const populateChecklist = (container, data) => {
-            container.innerHTML = data.map(item => `
-                <div class="flex items-center">
-                    <input id="chk-${item.id}" data-name="${item.name}" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
-                    <label for="chk-${item.id}" class="ml-2 text-sm font-medium text-slate-700">${item.name}</label>
-                </div>
-            `).join('');
+        const populateInterventionButtons = () => {
+             // Add standard intervention buttons first
+             let buttonsHTML = standardInterventions.map(item => `
+                 <button data-intervention="${item.id}" data-name="${item.name}" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm">${item.name}</button>
+             `).join('');
+             
+             // Append the hardcoded manual entry buttons from the HTML structure
+             const manualButtons = document.querySelectorAll('#interventions-buttons-grid button[data-drug]');
+             manualButtons.forEach(button => {
+                 // Prepend existing manual buttons to maintain desired order potentially
+                 buttonsHTML += button.outerHTML;
+                 button.remove(); // Remove original hardcoded button after getting its HTML
+             });
+              
+             interventionsButtonsGrid.innerHTML = buttonsHTML;
         };
         
         const populateReversibleCausesChecklist = () => {
@@ -969,44 +954,34 @@
                     <div>
                         <h3 class="text-xl font-bold mb-2">Anaphylaxis</h3>
                         <ul class="list-disc list-inside space-y-1">
-                            <li><strong>Remove trigger</strong> if possible.</li>
-                            <li>Immediately give <strong>Adrenaline 500 mcg IM</strong> (using 1mg/ml solution). Repeat after 5 minutes if no improvement.</li>
-                            <li>Give an early <strong>IV crystalloid fluid bolus</strong> and monitor the response.</li>
+                            <li>Early Adrenaline (IM/IV).</li>
                             <li>Secure airway early due to potential for oedema.</li>
+                            <li>Aggressive fluid resuscitation for vasodilation.</li>
                         </ul>
                     </div>
                     <div>
-                        <h3 class="text-xl font-bold mb-2">Asthma / COPD</h3>
+                        <h3 class="text-xl font-bold mb-2">Severe Asthma</h3>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>High index of suspicion for <strong>tension pneumothorax</strong>. Perform bilateral needle decompression or thoracostomy if suspected.</li>
-                            <li>Maximise oxygenation and minimise circuit disconnections to avoid derecruitment.</li>
+                            <li>High index of suspicion for tension pneumothorax.</li>
+                            <li>Perform bilateral needle decompression if suspected.</li>
+                            <li>Maximise oxygenation, minimise circuit disconnections to avoid derecruitment.</li>
                             <li>Consider IV bronchodilators, magnesium, and ketamine.</li>
                         </ul>
                     </div>
                     <div>
                         <h3 class="text-xl font-bold mb-2">Drowning</h3>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>Primary cause is <strong>hypoxia</strong>. Prioritise oxygenation.</li>
-                            <li>Start with <strong>5 initial rescue breaths</strong> before compressions.</li>
+                            <li>Primary cause is hypoxia. Prioritise oxygenation.</li>
+                            <li>Start with 5 initial rescue breaths before compressions.</li>
                             <li>Be aware of associated hypothermia and manage accordingly.</li>
                         </ul>
                     </div>
                      <div>
-                        <h3 class="text-xl font-bold mb-2">Hyperkalaemia</h3>
-                        <ul class="list-disc list-inside space-y-1">
-                            <li>For moderate (6.0-6.4 mmol/L) or severe (>6.5 mmol/L) hyperkalaemia give <strong>10 units of soluble insulin and 25g glucose IV</strong>.</li>
-                            <li>Consider <strong>10-20mg nebulised salbutamol</strong> as an adjunct.</li>
-                            <li>To remove potassium, give <strong>sodium zirconium cyclosilicate 10g orally</strong>.</li>
-                            <li>Consider dialysis for refractory severe hyperkalaemia.</li>
-                        </ul>
-                    </div>
-                    <div>
                         <h3 class="text-xl font-bold mb-2">Hypothermia</h3>
                         <ul class="list-disc list-inside space-y-1">
                             <li>Handle patient gently to avoid inducing VF.</li>
-                            <li>Core temp &lt;30°C: Max 3 shocks. Withhold further shocks/drugs until temp >30°C.</li>
-                            <li>Core temp 30-35°C: Double the interval for IV drugs.</li>
-                            <li>Transfer patients with risk factors (HR &lt;45, SBP &lt;90, ventricular arrhythmia, temp &lt;30°C) directly to an <strong>ECPR centre</strong> for rewarming.</li>
+                            <li>Core temperature &lt; 30°C: Max 3 shocks. Withhold further shocks and IV drugs until temp > 30°C.</li>
+                            <li>Core temperature 30-35°C: Double the interval for IV drugs.</li>
                             <li>Continue resuscitation until patient is rewarmed to >35°C ("Not dead until warm and dead").</li>
                         </ul>
                     </div>
@@ -1015,15 +990,8 @@
                         <ul class="list-disc list-inside space-y-1">
                             <li>Immediately stop injecting the local anaesthetic.</li>
                             <li>Manage seizures with benzodiazepines.</li>
-                            <li>Give <strong>IV Lipid Emulsion 20%</strong> (Intralipid). Bolus 1.5 ml/kg over 1 min, then start infusion.</li>
+                            <li>Give IV Lipid Emulsion 20% (Intralipid). Bolus 1.5 ml/kg over 1 min, then start infusion.</li>
                             <li>Avoid vasopressin, calcium channel blockers, beta-blockers. Reduce adrenaline doses.</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold mb-2">Obesity</h3>
-                        <ul class="list-disc list-inside space-y-1">
-                            <li>Obese patients should receive standard resuscitation treatment.</li>
-                            <li>No deviation from standard BLS and ALS is needed.</li>
                         </ul>
                     </div>
                     <div>
@@ -1031,7 +999,7 @@
                         <ul class="list-disc list-inside space-y-1">
                             <li>Perform continuous left lateral tilt (manual uterine displacement) to relieve aortocaval compression.</li>
                             <li>Prepare for emergency perimortem caesarean section. Aim to start within 4 minutes of arrest if no ROSC (the 4-minute rule).</li>
-                            <li>Standard ALS otherwise, including defibrillation.</li>
+                            <li>Standard ALS otherwise, including defibrillation (pads placed normally, uterus is not an issue).</li>
                         </ul>
                     </div>
                      <div>
@@ -1039,7 +1007,7 @@
                         <ul class="list-disc list-inside space-y-1">
                             <li>Contact National Poisons Information Service (NPIS) early.</li>
                             <li>Consider specific antidotes (e.g., Naloxone for opioids, Glucagon for beta-blocker OD).</li>
-                            <li>Prolonged resuscitation may be required.</li>
+                            <li>Prolonged resuscitation may be required. Consider mechanical CPR device.</li>
                         </ul>
                     </div>
                      <div>
@@ -1064,21 +1032,33 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            populateChecklist(interventionsChecklist, standardInterventions);
+            populateInterventionButtons(); // Populates standard interventions into the grid
             populateReversibleCausesChecklist();
             populateSpecialCircs();
 
-            // Add listeners for checklists
-            interventionsChecklist.addEventListener('change', (e) => {
-                if (e.target.type === 'checkbox') {
-                    const interventionName = e.target.dataset.name;
-                    if (e.target.checked) {
-                        addLog(`Intervention: ${interventionName}`);
-                    } else {
-                        addLog(`Intervention cleared: ${interventionName}`);
-                    }
-                }
+            // Unified listener for all buttons inside the grid
+            interventionsButtonsGrid.addEventListener('click', (e) => {
+                 const button = e.target.closest('button');
+                 if (!button || button.disabled) return;
+
+                 if (button.dataset.intervention) {
+                     // Handle standard intervention button
+                     const interventionName = button.dataset.name;
+                     addLog(`Intervention: ${interventionName}`);
+                     provideButtonFeedback(button);
+                 } else if (button.dataset.drug) {
+                     // Handle manual entry button (drugs/fluids)
+                     provideButtonFeedback(button);
+                     switch (button.dataset.drug) {
+                         case 'adrenaline': addLog('Manual Entry: Adrenaline 1mg given.'); break;
+                         case 'amio300': addLog('Manual Entry: Amiodarone 300mg given.'); break;
+                         case 'amio150': addLog('Manual Entry: Amiodarone 150mg given.'); break;
+                         case 'fluid500': addLog('Manual Entry: Fluid Bolus 500ml given.'); break;
+                         case 'fluid1000': addLog('Manual Entry: Fluid Bolus 1000ml given.'); break;
+                     }
+                 }
             });
+
             causesChecklist.addEventListener('change', (e) => {
                 const target = e.target;
                 const causeName = target.dataset.name;
@@ -1104,34 +1084,7 @@
                 }
             });
 
-            // Manual Drug entry
-            manualDrugContainer.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                if (!button || !button.dataset.drug || button.disabled) return;
-
-                // --- Visual Feedback Logic ---
-                const originalText = button.innerHTML;
-                button.innerHTML = `Logged ✓`;
-                const originalClasses = Array.from(button.classList);
-                button.className = 'w-full bg-green-500 text-white font-semibold py-1 px-2 rounded-lg shadow-sm text-sm';
-                button.disabled = true;
-
-                setTimeout(() => {
-                    button.innerHTML = originalText;
-                    button.className = originalClasses.join(' ');
-                    button.disabled = false;
-                }, 1500);
-                // --- End Visual Feedback ---
-
-
-                switch (button.dataset.drug) {
-                    case 'adrenaline': addLog('Manual Entry: Adrenaline 1mg given.'); break;
-                    case 'amio300': addLog('Manual Entry: Amiodarone 300mg given.'); break;
-                    case 'amio150': addLog('Manual Entry: Amiodarone 150mg given.'); break;
-                    case 'fluid500': addLog('Manual Entry: Fluid Bolus 500ml given.'); break;
-                    case 'fluid1000': addLog('Manual Entry: Fluid Bolus 1000ml given.'); break;
-                }
-            });
+            // Removed separate listener for manualDrugContainer
 
             // Add listeners for always-visible controls
             metronomeBtn.addEventListener('click', handleToggleMetronome);
