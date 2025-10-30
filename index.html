@@ -69,14 +69,19 @@
 </head>
 <body class="bg-slate-50 text-slate-800">
 
+    <!-- 2025 Guidance Banner -->
+    <div class="bg-yellow-100 border-b-2 border-yellow-300 text-yellow-800 p-2 text-center text-sm font-semibold print:hidden">
+        This guide has been updated to reflect the RCUK 2025 Guidelines.
+    </div>
+
     <div class="flex items-center justify-between p-2 bg-white shadow-sm border-b border-slate-200 print:hidden">
         <div class="w-1/3 flex justify-start pl-4">
             <img src="https://iili.io/KGQOvkl.md.png" alt="WMEBEM Logo" class="h-10">
         </div>
         <div class="w-1/3 text-center">
-            <a href="https://www.resus.org.uk/sites/default/files/2024-01/Adult%20Advanced%20Life%20Support%20Algorithm%202021%20Aug%202023.pdf" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center justify-center">
+            <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20ALS%20algorithm%202025.pdf" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center justify-center">
                 <i data-lucide="book-open" class="lucide-sm"></i>
-                View Official RCUK ALS Algorithm
+                View Official RCUK ALS Algorithm (2025)
             </a>
         </div>
         <div class="w-1/3"></div> <!-- Empty div for spacing -->
@@ -437,7 +442,7 @@
                     if (adrenalineIsDue && notGivenThisCycle) {
                         const reasonText = state.algorithmPath === 'NON_SHOCKABLE' && state.adrenalineCount === 0
                             ? "Give immediately."
-                            : "Due now (give every alternate cycle).";
+                            : "Due now (after 3rd shock / alternate cycle)."; // Updated reason
                          considerationsHTML += `
                             <div class="flex items-center justify-between p-3 bg-orange-100 border-l-4 border-orange-500 rounded-r-lg mb-2">
                                 <div>
@@ -475,12 +480,12 @@
                         `;
                     }
 
-                    // Pad Placement Prompt
-                    if (state.algorithmPath === 'SHOCKABLE' && state.shocksDelivered >= 5) {
+                    // Pad Placement Prompt - CORRECTED TO 2025 GUIDELINES
+                    if (state.algorithmPath === 'SHOCKABLE' && state.shocksDelivered >= 3) {
                          considerationsHTML += `
                             <div class="p-3 bg-sky-100 border-l-4 border-sky-500 rounded-r-lg">
                                 <p class="font-bold text-sky-700">Consider Pad Placement</p>
-                                <p class="text-sm text-sky-600">If not already done, consider changing to an antero-posterior position.</p>
+                                <p class="text-sm text-sky-600">Consider changing to antero-posterior position after 3 failed shocks.</p>
                             </div>
                         `;
                     }
@@ -504,18 +509,17 @@
                     content = `
                         <div class="text-center p-4 bg-green-100 rounded-lg">
                             <h2 class="text-2xl font-bold text-green-600 flex items-center justify-center"><i data-lucide="check-circle" class="mr-2"></i>ROSC Achieved</h2>
-                            <p class="text-slate-700 mt-2 mb-4">Proceed with post-resuscitation care.</p>
+                            <p class="text-slate-700 mt-2 mb-4">Proceed with post-resuscitation care (RCUK 2025).</p>
                             <ul class="text-left list-disc list-inside text-slate-600 space-y-2">
-                                <li>Use ABCDE approach to stabilise patient.</li>
-                                <li>Aim for SpO2 94-98%.</li>
-                                <li>Aim for normal CO2 (check ventilation).</li>
-                                <li>12-lead ECG.</li>
-                                <li>VBG / ABG.</li>
-                                <li>Chest X-ray.</li>
-                                <li>Treat precipitating cause (4Hs and 4Ts).</li>
-                                <li>Temperature control (target 32-36°C).</li>
-                                <li>Cardiology Review.</li>
-                                <li>ICU Review.</li>
+                                <li>ABCDE assessment</li>
+                                <li>Aim SpO2 94-98% and normal PaCO2</li>
+                                <li>Aim SBP > 100 mmHg</li>
+                                <li>12-lead ECG</li>
+                                <li>Identify and treat cause (4Hs and 4Ts)</li>
+                                <li>Temperature control (Maintain ≤37.5°C)</li>
+                                <li>Treat seizures (e.g., levetiracetam)</li>
+                                <li>Delay prognostication for ≥72 hours</li>
+                                <li class="mt-2"><a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" rel="noopener" class="text-blue-600 hover:underline">View Post-Resuscitation Care (2025)</a></li>
                             </ul>
                         </div>`;
                     break;
@@ -726,7 +730,7 @@
             // Reset checklists and custom input
             document.querySelectorAll('#interventions-buttons-grid button, #causes-checklist input').forEach(el => {
                  if (el.tagName === 'BUTTON') {
-                     // Reset button state if needed (optional) - might need if feedback state persists
+                    el.disabled = false; // Re-enable buttons
                  } else if (el.type === 'checkbox' || el.type === 'radio') {
                      el.checked = false;
                  }
@@ -735,6 +739,7 @@
                 rb.disabled = true;
             });
             customInterventionInput.value = '';
+            document.getElementById('handover-notes').value = ''; // Clear notes
             
             updateUI();
         };
@@ -917,13 +922,13 @@
              
              // Append the hardcoded manual entry buttons from the HTML structure
              const manualButtons = document.querySelectorAll('#interventions-buttons-grid button[data-drug]');
+             let manualButtonsHTML = '';
              manualButtons.forEach(button => {
-                 // Prepend existing manual buttons to maintain desired order potentially
-                 buttonsHTML += button.outerHTML;
+                 manualButtonsHTML += button.outerHTML;
                  button.remove(); // Remove original hardcoded button after getting its HTML
              });
               
-             interventionsButtonsGrid.innerHTML = buttonsHTML;
+             interventionsButtonsGrid.innerHTML = buttonsHTML + manualButtonsHTML; // Combine standard and manual
         };
         
         const populateReversibleCausesChecklist = () => {
@@ -951,6 +956,20 @@
         const populateSpecialCircs = () => {
             specialCircsContent.innerHTML = `
                 <div class="space-y-6 text-slate-700">
+                    <div class="mb-4">
+                         <a href="https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/special-circumstances-guidelines" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-blue-600 hover:underline flex items-center">
+                            <i data-lucide="book-open" class="lucide-sm"></i>
+                            View Full Special Circumstances (2025)
+                        </a>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">CPR-Induced Consciousness (2025 Update)</h3>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Uncommon but increasingly reported.</li>
+                            <li>Consider small doses of analgesia/sedation (e.g., fentanyl, ketamine) for distress.</li>
+                            <li>Do not give neuromuscular blockers alone.</li>
+                        </ul>
+                    </div>
                     <div>
                         <h3 class="text-xl font-bold mb-2">Anaphylaxis</h3>
                         <ul class="list-disc list-inside space-y-1">
