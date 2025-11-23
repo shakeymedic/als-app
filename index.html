@@ -540,15 +540,22 @@
                         if (state.shocksDelivered === 3) considerations += `<li class="text-purple-600 font-bold">Give Amiodarone 300mg</li>`;
                         if (state.shocksDelivered === 5) considerations += `<li class="text-purple-600 font-bold">Give Amiodarone 150mg</li>`;
                         if (state.shocksDelivered >= 3) considerations += `<li class="text-blue-600 font-semibold">Consider Changing Pad Vector (e.g. AP)</li>`;
+                        
                     } else if (state.mode === 'PAEDS') {
                         const adr = state.wetflag ? state.wetflag.adrenaline_mcg + 'mcg' : '10mcg/kg';
                         if (state.shocksDelivered >= 3 && state.cycleCount % 2 !== 0) considerations += `<li class="text-orange-600 font-bold">Give Adrenaline ${adr}</li>`;
                          if (state.shocksDelivered === 3 || state.shocksDelivered === 5) considerations += `<li class="text-purple-600 font-bold">Give Amiodarone 5mg/kg</li>`;
+                        
+                        // NEW: DOPE check for Paeds
                         considerations += `<li>Ensure 15:2 Ratio</li>`;
                         if (state.cycleCount > 1) considerations += `<li class="text-slate-500 italic">Check Tube: DOPE (Displacement, Obstruction, Pneumothorax)</li>`;
+
                     } else if (state.mode === 'NEO') {
                          considerations += `<li>Ensure 3:1 Ratio (Synchronised)</li><li>Focus on Aeration</li>`;
+                         
+                         // NEW: Mask seal prompt for Neo
                          considerations += `<li class="text-blue-600 font-semibold">Check Mask Seal & Head Position</li>`;
+                         
                          if (state.cycleCount > 2) considerations += `<li class="text-orange-600 font-bold">Consider Adrenaline if HR < 60 despite effective ventilation</li>`;
                     }
 
@@ -573,14 +580,62 @@
                     break;
                 case 'POST_ROSC':
                     content = `
-                        <div class="text-center p-6 bg-green-50 rounded-lg h-full border border-green-200">
-                            <h2 class="text-3xl font-bold text-green-600 flex items-center justify-center mb-4"><i data-lucide="check-circle" class="mr-2 w-8 h-8"></i>ROSC Achieved</h2>
-                            <ul class="text-left list-disc list-inside text-slate-700 space-y-3 text-lg">
-                                <li><strong>A</strong>irway & <strong>B</strong>reathing: Aim SpO2 94-98%</li>
-                                <li><strong>C</strong>irculation: 12-Lead ECG, Blood Pressure</li>
-                                <li><strong>D</strong>isability: Check Glucose, Sedation?</li>
-                                <li><strong>E</strong>xposure: Temperature Control</li>
-                            </ul>
+                        <div class="text-center p-4 bg-green-50 rounded-lg h-full border border-green-200 overflow-y-auto">
+                            <h2 class="text-2xl font-bold text-green-600 flex items-center justify-center mb-4">
+                                <i data-lucide="check-circle" class="mr-2 w-8 h-8"></i>ROSC Achieved
+                            </h2>
+                            <div class="text-left space-y-3">
+                                <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Immediate Post-Resuscitation Care (ABCDE)</h3>
+                                
+                                <div>
+                                    <p class="font-semibold text-slate-700">A - Airway</p>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
+                                        <li>Maintain patent airway.</li>
+                                        <li>Intubate if unconscious (avoid hyperventilation).</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-slate-700">B - Breathing</p>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
+                                        <li>Aim SpO<sub>2</sub> 94-98%.</li>
+                                        <li>Aim normal PaCO<sub>2</sub> (4.5-6.0 kPa).</li>
+                                        <li>Protective lung ventilation strategy.</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-slate-700">C - Circulation</p>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
+                                        <li>12-lead ECG: Urgent PCI for STEMI?</li>
+                                        <li>Aim SBP > 100 mmHg (MAP > 65 mmHg).</li>
+                                        <li>Fluid bolus / Vasopressors (Noradrenaline).</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-slate-700">D - Disability</p>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
+                                        <li>Control Glucose (4-10 mmol/L).</li>
+                                        <li>Treat Seizures.</li>
+                                        <li>Sedation for shivering/agitation.</li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <p class="font-semibold text-slate-700">E - Exposure / Temperature</p>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
+                                        <li>Targeted Temperature Management.</li>
+                                        <li>Maintain temp &le; 37.5&deg;C (prevent fever).</li>
+                                    </ul>
+                                </div>
+
+                                <div class="mt-4 pt-4 border-t border-green-200">
+                                    <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
+                                        <i data-lucide="external-link" class="w-4 h-4 mr-2"></i> View Full 2025 RCUK Post-ROSC Guide
+                                    </a>
+                                </div>
+                            </div>
                         </div>`;
                     break;
             }
@@ -739,6 +794,15 @@
              resetApp(false);
         };
 
+        const handleManualCheck = () => {
+            if (!state.isCprInProgress) return;
+            clearInterval(cycleTimerInterval);
+            state.isCprInProgress = false;
+            state.currentStep = 'ASSESS_RHYTHM';
+            addLog('Manual Rhythm Check: Compressions Paused.');
+            updateUI();
+        };
+
         const resetApp = (clearLog = true) => {
             clearInterval(totalElapsedInterval);
             clearInterval(cycleTimerInterval);
@@ -820,6 +884,12 @@
                 case 'deliver-shock-btn': handleDeliverShock(); break;
             }
         });
+
+        // Add listeners for static buttons that were missing
+        document.getElementById('manual-check-btn').addEventListener('click', handleManualCheck);
+        document.getElementById('rosc-btn').addEventListener('click', handleRosc);
+        document.getElementById('rearrest-btn').addEventListener('click', handleRearrest);
+        document.getElementById('end-arrest-btn').addEventListener('click', handleEndArrest);
 
         document.getElementById('interventions-buttons-grid').addEventListener('click', (e) => {
              const button = e.target.closest('button');
