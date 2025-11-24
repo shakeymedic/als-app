@@ -31,12 +31,44 @@
         /* Print styles */
         @media print {
             body * { visibility: hidden; }
-            #log-content, #log-content * { visibility: visible; }
-            #log-content { position: absolute; left: 0; top: 0; width: 100%; }
+            #summary-content, #summary-content * { visibility: visible; }
+            #summary-content { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
+
+    <!-- Summary Modal Overlay -->
+    <div id="summary-modal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
+            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
+                    <i data-lucide="clipboard-list" class="mr-2"></i> Resuscitation Summary
+                </h2>
+                <button onclick="closeSummary()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="summary-content" class="p-6 space-y-4">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end no-print">
+                <button onclick="copySummaryOnly()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> Copy Summary
+                </button>
+                 <button onclick="copyLogOnly()" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                    <i data-lucide="list" class="w-4 h-4 mr-2"></i> Copy Log
+                </button>
+                <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg flex items-center">
+                    <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print
+                </button>
+                <button onclick="closeSummary()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Banner -->
     <div class="bg-yellow-100 border-b-2 border-yellow-300 text-yellow-800 p-2 text-center text-sm font-semibold print:hidden">
@@ -176,6 +208,9 @@
                     </button>
                 </nav>
                 <div class="flex items-center ml-4">
+                    <button id="view-summary-btn" onclick="openSummaryModal()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 px-3 rounded-lg mr-2 border border-slate-300">
+                        Summary
+                    </button>
                     <button id="print-log-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg shadow-sm flex items-center transition-colors hidden mr-2">
                         <i data-lucide="printer" class="lucide-sm"></i> <span class="hidden sm:inline">Print</span>
                     </button>
@@ -210,12 +245,20 @@
             algorithmPath: null,
             cycleCount: 0,
             shocksDelivered: 0,
-            adrenalineCount: 0,
-            amiodarone300Given: false,
-            amiodarone150Given: false,
+            counts: {
+                adrenaline: 0,
+                amiodarone: 0,
+                fluids: 0,
+                glucose: 0,
+                access: 0,
+                sga: 0,
+                ett: 0,
+                shocks: 0
+            },
             log: [],
             startTime: null,
-            roscTime: 0,
+            endTime: null,
+            roscTime: null,
             rearrestTime: null,
             isRearrestActive: false,
             // Paeds/Neo Specific
@@ -261,6 +304,10 @@
         const addInterventionBtn = document.getElementById('add-intervention-btn');
         const interventionsButtonsGrid = document.getElementById('interventions-buttons-grid');
         const causesChecklist = document.getElementById('causes-checklist');
+        
+        const summaryModal = document.getElementById('summary-modal');
+        const summaryContent = document.getElementById('summary-content');
+        const viewSummaryBtn = document.getElementById('view-summary-btn');
 
         // --- Data ---
         const reversibleCauses = [
@@ -306,6 +353,11 @@
             const secs = (seconds % 60).toString().padStart(2, '0');
             return `${mins}:${secs}`;
         };
+        
+        const formatDateTime = (date) => {
+            if (!date) return "--:--";
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
 
         const addLog = (message) => {
             const elapsed = state.startTime ? Math.floor((new Date() - state.startTime) / 1000) : 0;
@@ -319,17 +371,10 @@
         };
 
         const provideButtonFeedback = (button) => {
-            const originalText = button.innerHTML;
-            button.innerHTML = `Logged ✓`;
-            button.classList.add('bg-green-500', 'text-white', 'border-transparent');
-            button.classList.remove('bg-white', 'bg-blue-500', 'bg-orange-500', 'bg-purple-500', 'bg-slate-100'); 
-            button.disabled = true;
+            button.classList.add('scale-95', 'opacity-80');
             setTimeout(() => {
-                button.innerHTML = originalText;
-                button.classList.remove('bg-green-500', 'text-white', 'border-transparent');
-                renderInterventionButtons(); // Restore correct classes
-                button.disabled = false;
-            }, 1000);
+                button.classList.remove('scale-95', 'opacity-80');
+            }, 100);
         };
 
         // --- Protocol Selection ---
@@ -373,36 +418,58 @@
         const renderInterventionButtons = () => {
             let html = '';
             
-            // Standard Buttons
+            // Utility for badge rendering
+            const badge = (count) => count > 0 ? `<span class="absolute top-1 right-1 bg-white text-slate-800 text-xs font-bold px-1.5 rounded-full shadow border border-slate-200">${count}</span>` : '';
+            
+            // Standard Buttons (Airway Split + Access)
             html += `
-                <button data-intervention="airway" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">Airway Secured</button>
-                <button data-intervention="access" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">IV/IO Access</button>
+                <button data-intervention="airway_sga" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
+                    Airway (SGA/iGel) ${badge(state.counts.sga)}
+                </button>
+                <button data-intervention="airway_ett" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
+                    Airway (ETT) ${badge(state.counts.ett)}
+                </button>
+                <div class="col-span-2">
+                     <button data-intervention="access" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
+                        IV/IO Access Secured ${badge(state.counts.access)}
+                     </button>
+                </div>
             `;
 
             // Dynamic Buttons
             if (state.mode === 'ADULT') {
                  html += `
-                    <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm">Adrenaline 1mg</button>
-                    <button data-drug="amio300" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm">Amio 300mg</button>
-                    <button data-drug="amio150" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm">Amio 150mg</button>
-                    <button data-drug="fluid" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm">Fluid 500ml</button>
+                    <button data-drug="adrenaline" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                        Adrenaline 1mg ${badge(state.counts.adrenaline)}
+                    </button>
+                    <button data-drug="amiodarone" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                        Amiodarone ${badge(state.counts.amiodarone)}
+                        <span class="block text-[10px] opacity-80 font-normal">300mg / 150mg</span>
+                    </button>
+                    <button data-drug="fluids" class="relative col-span-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                        Fluid 500ml ${badge(state.counts.fluids)}
+                    </button>
                  `;
             } else if (state.mode === 'PAEDS' && state.wetflag) {
                  const wf = state.wetflag;
                  html += `
-                    <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="adrenaline" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Adrenaline ${wf.adrenaline_mcg}mcg</span>
                         <span class="text-[10px] font-normal opacity-90">(${wf.adrenaline_vol}ml of 1:10k)</span>
+                        ${badge(state.counts.adrenaline)}
                     </button>
-                    <button data-drug="amio" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="amiodarone" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                          <span>Amiodarone ${wf.amiodarone}mg</span>
+                         ${badge(state.counts.amiodarone)}
                     </button>
-                    <button data-drug="fluid" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Fluid ${wf.fluids}ml</span>
+                        ${badge(state.counts.fluids)}
                     </button>
-                    <button data-drug="glucose" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="glucose" class="relative w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Glucose ${wf.glucose}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(10%)</span>
+                        ${badge(state.counts.glucose)}
                     </button>
                  `;
             } else if (state.mode === 'NEO') {
@@ -411,13 +478,15 @@
                  const fluid = Math.round(w * 10);
                  
                  html += `
-                    <button data-drug="adrenaline" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="adrenaline" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Adrenaline ${adrVol}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(1:10,000)</span>
+                        ${badge(state.counts.adrenaline)}
                     </button>
-                    <button data-drug="fluid" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center">
+                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Fluid ${fluid}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(Saline / O-)</span>
+                        ${badge(state.counts.fluids)}
                     </button>
                  `;
             } else {
@@ -585,6 +654,9 @@
                                 <i data-lucide="check-circle" class="mr-2 w-8 h-8"></i>ROSC Achieved
                             </h2>
                             <div class="text-left space-y-3">
+                                <div class="bg-white p-3 rounded border border-green-100 mb-4 shadow-sm text-center">
+                                    <button onclick="openSummaryModal()" class="text-green-700 font-bold underline hover:text-green-800">View & Copy Resus Summary</button>
+                                </div>
                                 <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Immediate Post-Resuscitation Care (ABCDE)</h3>
                                 
                                 <div>
@@ -653,14 +725,19 @@
             rearrestBtn.classList.toggle('hidden', !isPostRosc);
             manualCheckBtn.classList.toggle('hidden', !state.isCprInProgress);
             
+            // Only show summary button if we have started an arrest or are in one
+            viewSummaryBtn.classList.toggle('hidden', !state.startTime);
+            
             leftPanelCombinedContainer.classList.toggle('hidden', !state.isArrestActive);
 
             if (state.isArrestActive) {
                 endArrestBtn.classList.remove('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
                 endArrestBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
+                endArrestBtn.disabled = false;
             } else {
                 endArrestBtn.classList.add('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
                 endArrestBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white');
+                endArrestBtn.disabled = true;
             }
             
             renderGuidance();
@@ -705,8 +782,25 @@
 
         const handleStartArrest = () => {
             state = {
-                ...state, isArrestActive: true, currentStep: 'ASSESS_RHYTHM',
-                startTime: new Date(), log: [], algorithmPath: null
+                ...state, 
+                isArrestActive: true, 
+                currentStep: 'ASSESS_RHYTHM',
+                startTime: new Date(), 
+                endTime: null,
+                log: [], 
+                algorithmPath: null,
+                shocksDelivered: 0,
+                cycleCount: 0,
+                counts: {
+                    adrenaline: 0,
+                    amiodarone: 0,
+                    fluids: 0,
+                    glucose: 0,
+                    access: 0,
+                    sga: 0,
+                    ett: 0,
+                    shocks: 0
+                }
             };
             addLog(`${state.mode} Cardiac arrest started.`);
             if (state.patientWeight) addLog(`Weight: ${state.patientWeight}kg`);
@@ -734,6 +828,8 @@
 
             state.cycleCount = cycles;
             state.shocksDelivered = shocks;
+            state.counts.shocks = shocks;
+            
             state.currentStep = 'ASSESS_RHYTHM';
             updateUI();
         };
@@ -753,6 +849,7 @@
 
         const handleDeliverShock = () => {
             state.shocksDelivered++;
+            state.counts.shocks++;
             const energy = state.wetflag ? `(${state.wetflag.energy}J)` : '';
             addLog(`Shock ${state.shocksDelivered} delivered ${energy}.`);
             handleStartCpr();
@@ -768,15 +865,18 @@
         };
         
         const handleRosc = () => {
-            const finalArrestTime = state.startTime ? Math.floor((new Date() - state.startTime) / 1000) : 0;
-            state.roscTime = finalArrestTime;
-            initialArrestTimeElem.textContent = formatTime(finalArrestTime);
+            const now = new Date();
+            state.roscTime = now;
+            state.endTime = now;
+            initialArrestTimeElem.textContent = formatTime(Math.floor((now - state.startTime) / 1000));
             addLog(`ROSC achieved.`);
 
             state.isCprInProgress = false;
             state.currentStep = 'POST_ROSC';
             clearInterval(cycleTimerInterval);
             clearInterval(totalElapsedInterval);
+            
+            openSummaryModal('ROSC');
             updateUI();
         };
         
@@ -790,8 +890,11 @@
         };
 
         const handleEndArrest = () => {
+             state.endTime = new Date();
              addLog(`Arrest Concluded.`);
-             resetApp(false);
+             clearInterval(cycleTimerInterval);
+             clearInterval(totalElapsedInterval);
+             openSummaryModal('ENDED');
         };
 
         const handleManualCheck = () => {
@@ -812,13 +915,18 @@
             state.shocksDelivered = 0;
             state.cycleCount = 0;
             state.startTime = null;
+            state.endTime = null;
             state.patientWeight = 0;
             state.patientAge = 0;
             state.wetflag = null;
+            state.counts = { adrenaline: 0, amiodarone: 0, fluids: 0, glucose: 0, access: 0, sga: 0, ett: 0, shocks: 0 };
+            
             if(clearLog) state.log = [];
             totalElapsedTimeElem.innerText = "00:00";
             cprCycleTimerSmall.innerText = "02:00";
             document.getElementById('handover-notes').value = '';
+            
+            closeSummary();
             updateUI();
         };
 
@@ -869,6 +977,138 @@
                 }
             }, 1000);
         };
+        
+        // --- Summary Modal Logic ---
+        window.openSummaryModal = (outcome = 'ONGOING') => {
+             const duration = state.startTime && state.endTime 
+                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
+                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
+             
+             let outcomeColor = outcome === 'ROSC' ? 'text-green-600' : (outcome === 'ENDED' ? 'text-slate-600' : 'text-blue-600');
+             let outcomeTitle = outcome === 'ROSC' ? 'ROSC ACHIEVED' : (outcome === 'ENDED' ? 'RESUSCITATION ENDED' : 'CURRENT SUMMARY');
+
+             let html = `
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <p class="text-xs text-slate-500 uppercase font-bold">Outcome</p>
+                        <p class="text-xl font-bold ${outcomeColor}">${outcomeTitle}</p>
+                     </div>
+                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                        <p class="text-xs text-slate-500 uppercase font-bold">Total Downtime</p>
+                        <p class="text-xl font-mono font-bold text-slate-800">${duration}</p>
+                     </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500">Arrest Time</p>
+                        <p class="font-bold text-slate-800">${formatDateTime(state.startTime)}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs text-slate-500">End/ROSC Time</p>
+                        <p class="font-bold text-slate-800">${formatDateTime(state.endTime) || '--:--'}</p>
+                    </div>
+                     <div class="text-center">
+                        <p class="text-xs text-slate-500">Total Cycles</p>
+                        <p class="font-bold text-slate-800">${state.cycleCount}</p>
+                    </div>
+                     <div class="text-center">
+                        <p class="text-xs text-slate-500">Total Shocks</p>
+                        <p class="font-bold text-slate-800">${state.counts.shocks}</p>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 pt-4 mb-4">
+                    <h3 class="font-bold text-slate-700 mb-3">Intervention Totals</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+                        <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>Adrenaline:</span> <span class="font-bold">${state.counts.adrenaline}</span>
+                        </div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>Amiodarone:</span> <span class="font-bold">${state.counts.amiodarone}</span>
+                        </div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>Fluids:</span> <span class="font-bold">${state.counts.fluids}</span>
+                        </div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>Airway (SGA):</span> <span class="font-bold">${state.counts.sga}</span>
+                        </div>
+                        <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>Airway (ETT):</span> <span class="font-bold">${state.counts.ett}</span>
+                        </div>
+                         <div class="flex justify-between bg-slate-50 p-2 rounded">
+                            <span>IV/IO Access:</span> <span class="font-bold">${state.counts.access}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                ${state.wetflag ? `
+                 <div class="border-t border-slate-200 pt-4 mb-4">
+                    <h3 class="font-bold text-slate-700 mb-1">Patient Info (Paeds)</h3>
+                    <p class="text-sm text-slate-600">Weight: ${state.patientWeight}kg | Est. Age: ${state.patientAge}</p>
+                 </div>
+                ` : ''}
+
+                <div class="border-t border-slate-200 pt-4">
+                    <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
+                        ${state.log.map(l => `<div class="mb-1"><span class="text-slate-400">[${l.time.toLocaleTimeString()}]</span> ${l.message}</div>`).join('')}
+                    </div>
+                </div>
+             `;
+             
+             summaryContent.innerHTML = html;
+             summaryModal.classList.remove('hidden');
+        };
+        
+        window.closeSummary = () => {
+             summaryModal.classList.add('hidden');
+        };
+        
+        window.copySummaryOnly = () => {
+             const duration = state.startTime && state.endTime 
+                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
+                : "Ongoing";
+            
+            let text = `RESUSCITATION SUMMARY\n`;
+            text += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
+            text += `Total Duration: ${duration}\n`;
+            text += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
+            text += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
+            text += `TOTALS:\n`;
+            text += `- Adrenaline: ${state.counts.adrenaline}\n`;
+            text += `- Amiodarone: ${state.counts.amiodarone}\n`;
+            text += `- Fluids: ${state.counts.fluids}\n`;
+            text += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
+            text += `- Access: ${state.counts.access}\n`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('button[onclick="copySummaryOnly()"]');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Copied!';
+                setTimeout(() => { 
+                    btn.innerHTML = original;
+                    lucide.createIcons();
+                }, 1500);
+            });
+        };
+        
+        window.copyLogOnly = () => {
+            let text = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
+            state.log.forEach(l => {
+                text += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
+            });
+            
+             navigator.clipboard.writeText(text).then(() => {
+                const btn = document.querySelector('button[onclick="copyLogOnly()"]');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Copied!';
+                setTimeout(() => { 
+                    btn.innerHTML = original;
+                    lucide.createIcons();
+                }, 1500);
+            });
+        };
 
         // --- Event Listeners ---
         document.getElementById('guidance-content').addEventListener('click', (e) => {
@@ -894,13 +1134,28 @@
         document.getElementById('interventions-buttons-grid').addEventListener('click', (e) => {
              const button = e.target.closest('button');
              if (!button || button.disabled) return;
-             if(button.dataset.intervention) {
-                 addLog(`${button.innerText} Recorded`);
-             } else if (button.dataset.drug) {
+             
+             // Count Logic
+             if (button.dataset.drug) {
+                 const drug = button.dataset.drug;
+                 if (state.counts[drug] !== undefined) state.counts[drug]++;
+                 
                  const text = button.querySelector('span') ? button.querySelector('span').innerText : button.innerText;
                  addLog(`${text} Given`);
              }
+             
+             if (button.dataset.intervention) {
+                 const intv = button.dataset.intervention;
+                 // Handle split airway counts
+                 if (intv === 'airway_sga') state.counts.sga++;
+                 if (intv === 'airway_ett') state.counts.ett++;
+                 if (intv === 'access') state.counts.access++;
+                 
+                 addLog(`${button.innerText} Recorded`);
+             }
+             
              provideButtonFeedback(button);
+             renderInterventionButtons(); // Re-render to update badges
         });
         
         document.getElementById('add-intervention-btn').addEventListener('click', () => {
