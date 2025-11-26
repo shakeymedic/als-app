@@ -688,6 +688,9 @@
                     break;
                 case 'PERFORMING_CPR':
                     let considerations = '';
+                    // Added prompt for Hs and Ts
+                    considerations += `<li class="font-bold text-slate-700">Review Reversible Causes (4Hs & 4Ts)</li>`;
+
                     if (state.mode === 'ADULT') {
                         if (state.shocksDelivered >= 3 && state.cycleCount % 2 !== 0) considerations += `<li class="text-orange-600 font-bold">Give Adrenaline 1mg</li>`;
                         if (state.shocksDelivered === 3) considerations += `<li class="text-purple-600 font-bold">Give Amiodarone 300mg</li>`;
@@ -1177,9 +1180,8 @@
                     <h3 class="font-bold text-slate-700 mb-2">Patient Info (Neonatal)</h3>
                     <div class="text-sm text-slate-600 space-y-1">
                         <div><strong>Weight:</strong> ${state.patientWeight}kg</div>
-                        <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k)</div>
-                        <div><strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml | <strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%)</div>
-                        <div><strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
+                        <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k) | <strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml</div>
+                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
                     </div>
                  </div>
                 ` : ''}
@@ -1432,16 +1434,16 @@
                                onchange="addLog(this.checked ? 'Cause Treated: ${item.name}' : 'Cause Untreated: ${item.name}')">
                     </div>
                     <div class="flex justify-center">
-                        <input type="radio" name="likely_cause" class="w-5 h-5 border-gray-300 text-red-600 focus:ring-red-500" 
-                               onclick="handleLikelyCause('${item.name}')">
+                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                               onchange="handleLikelyCause('${item.name}', this.checked)">
                     </div>
                 </div>
              `).join('');
              container.innerHTML = html;
         };
         
-        window.handleLikelyCause = (name) => {
-             addLog(`Likely Cause identified: ${name}`);
+        window.handleLikelyCause = (name, isChecked) => {
+             addLog(isChecked ? `Likely Cause identified: ${name}` : `Likely Cause deselected: ${name}`);
         };
         
         populateReversible();
