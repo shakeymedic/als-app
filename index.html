@@ -688,9 +688,7 @@
                     break;
                 case 'PERFORMING_CPR':
                     let considerations = '';
-                    // Added prompt for Hs and Ts
-                    considerations += `<li class="font-bold text-slate-700">Review Reversible Causes (4Hs & 4Ts)</li>`;
-
+                   
                     if (state.mode === 'ADULT') {
                         if (state.shocksDelivered >= 3 && state.cycleCount % 2 !== 0) considerations += `<li class="text-orange-600 font-bold">Give Adrenaline 1mg</li>`;
                         if (state.shocksDelivered === 3) considerations += `<li class="text-purple-600 font-bold">Give Amiodarone 300mg</li>`;
@@ -725,6 +723,30 @@
                                     ${cprText}
                                 </p>
                                 ${hasAdvancedAirway ? `<p class="text-sm text-slate-500 mt-2">${ventText}</p>` : ''}
+                                
+                                <div class="mt-2 text-left bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                                    <div class="font-bold text-indigo-800 text-sm mb-1">Check Reversible Causes</div>
+                                    <div class="grid grid-cols-2 gap-2 text-xs text-indigo-700">
+                                        <div>
+                                            <span class="font-semibold block mb-0.5">4 Hs</span>
+                                            <ul class="list-disc list-inside leading-tight">
+                                                <li>Hypoxia</li>
+                                                <li>Hypovolaemia</li>
+                                                <li>Hyper/Hypokal.</li>
+                                                <li>Hypothermia</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                             <span class="font-semibold block mb-0.5">4 Ts</span>
+                                             <ul class="list-disc list-inside leading-tight">
+                                                <li>Thrombosis</li>
+                                                <li>Tamponade</li>
+                                                <li>Toxins</li>
+                                                <li>Tension Pn.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             ${considerations ? `
