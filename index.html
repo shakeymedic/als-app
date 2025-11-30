@@ -25,6 +25,14 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
+        @keyframes flash-bg {
+            0% { background-color: #fee2e2; }
+            100% { background-color: #ffffff; }
+        }
+        .flash-active {
+            animation: flash-bg 1s infinite;
+        }
+
         /* Disabled inputs */
         input[type="checkbox"]:disabled + label { text-decoration: line-through; color: #64748b; }
 
@@ -153,9 +161,6 @@
                     </button>
                     <button id="rearrest-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-transform transform hover:scale-105 hidden">
                         <i data-lucide="alert-circle" class="lucide"></i> Rearrest
-                    </button>
-                    <button id="metronome-btn" class="w-full font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-colors bg-slate-200 hover:bg-slate-300">
-                       <i data-lucide="volume-x" class="lucide"></i> Metronome Off
                     </button>
                      <button id="end-arrest-btn" class="w-full font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-colors bg-slate-400 text-slate-700 cursor-not-allowed">
                        <i data-lucide="square" class="lucide"></i> End Arrest
@@ -487,7 +492,7 @@
                 if(count > 0) {
                     return `
                     <div class="absolute top-1 right-1 flex items-center space-x-1">
-                        <div class="decrement-btn bg-white/30 hover:bg-white/50 text-white rounded-full w-4 h-4 flex items-center justify-center cursor-pointer text-[10px]" title="Undo">-</div>
+                        <div class="decrement-btn bg-white/30 hover:bg-white/50 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer text-xs font-bold" title="Undo">-</div>
                         <span class="bg-white text-slate-800 text-xs font-bold px-1.5 rounded-full shadow border border-slate-200">${count}</span>
                     </div>`;
                 }
@@ -605,12 +610,14 @@
                             <div class="bg-teal-50 p-4 rounded-lg mb-6 text-left border border-teal-200">
                                 <h3 class="font-bold text-teal-700 mb-2">WETFLAG Calculator</h3>
                                 <div class="flex space-x-2 mb-2">
-                                    <input type="number" id="input-age" placeholder="Age (years)" class="p-2 border rounded w-1/2" onchange="updatePaedsCalc(this.value, 'age')">
-                                    <input type="number" id="input-weight" placeholder="Weight (kg)" class="p-2 border rounded w-1/2" onchange="updatePaedsCalc(this.value, 'weight')">
+                                    <input type="number" id="input-age" placeholder="Age (years)" class="p-2 border rounded w-1/3">
+                                    <input type="number" id="input-weight" placeholder="Weight (kg)" class="p-2 border rounded w-1/3">
+                                    <button onclick="updatePaedsCalc(document.getElementById('input-age').value, 'age')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-1/3 shadow">
+                                        Calculate
+                                    </button>
                                 </div>
                                 <div id="wetflag-results" class="text-xs text-teal-800 hidden mt-3 p-2 bg-white rounded border border-teal-300">
-                                    <!-- Populated by JS -->
-                                </div>
+                                    </div>
                             </div>` : ''}
 
                             ${state.mode === 'NEO' ? `
@@ -649,6 +656,14 @@
                                     <label class="font-medium">Shocks Delivered:</label>
                                     <input type="number" id="pre-shocks" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
                                 </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="font-medium">Adrenaline Given:</label>
+                                    <input type="number" id="pre-adrenaline" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="font-medium">Amiodarone Given:</label>
+                                    <input type="number" id="pre-amiodarone" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
+                                </div>
                             </div>
                             <div class="mt-8">
                                 <button id="continue-from-pre-arrest-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl shadow-lg flex items-center justify-center">
@@ -682,7 +697,7 @@
                 case 'SHOCKABLE':
                     const energy = (state.wetflag) ? `${state.wetflag.energy}J` : (state.mode === 'ADULT' ? '150-200J' : '4 J/kg');
                     content = `
-                        <div class="text-center h-full flex flex-col justify-center">
+                        <div class="text-center h-full flex flex-col justify-start pt-8">
                             <h2 class="text-3xl font-bold text-red-500 mb-2">Shockable Rhythm</h2>
                             <p class="text-slate-500 mb-8">Energy: <strong>${energy}</strong></p>
                             <button id="deliver-shock-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-8 px-4 rounded-xl text-2xl shadow-xl flex items-center justify-center animate-pulse">
@@ -751,15 +766,15 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                ${considerations ? `
+                                <div class="mt-4 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400 text-left">
+                                    <h4 class="font-bold text-slate-700 mb-1">Clinical Actions:</h4>
+                                    <ul class="list-disc list-inside text-sm space-y-1">
+                                        ${considerations}
+                                    </ul>
+                                </div>` : ''}
                             </div>
-                            
-                            ${considerations ? `
-                            <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400 text-left">
-                                <h4 class="font-bold text-slate-700 mb-1">Clinical Actions:</h4>
-                                <ul class="list-disc list-inside text-sm space-y-1">
-                                    ${considerations}
-                                </ul>
-                            </div>` : ''}
                         </div>`;
                     break;
                 case 'POST_ROSC':
@@ -964,6 +979,8 @@
         const handleContinueFromPreArrest = () => {
             const cycles = parseInt(document.getElementById('pre-cycles').value) || 0;
             const shocks = parseInt(document.getElementById('pre-shocks').value) || 0;
+            const adrenaline = parseInt(document.getElementById('pre-adrenaline').value) || 0;
+            const amiodarone = parseInt(document.getElementById('pre-amiodarone').value) || 0;
 
             state.isArrestActive = true;
             state.startTime = new Date();
@@ -972,6 +989,15 @@
             addLog(`${state.mode} Patient arrived in arrest.`);
             if (cycles > 0) addLog(`[PRE-ARRIVAL] ${cycles} cycles completed.`);
             if (shocks > 0) addLog(`[PRE-ARRIVAL] ${shocks} shocks delivered.`);
+            
+            if (adrenaline > 0) {
+                state.counts.adrenaline = adrenaline;
+                addLog(`[PRE-ARRIVAL] ${adrenaline} Adrenaline recorded.`);
+            }
+            if (amiodarone > 0) {
+                state.counts.amiodarone = amiodarone;
+                addLog(`[PRE-ARRIVAL] ${amiodarone} Amiodarone recorded.`);
+            }
 
             state.cycleCount = cycles;
             state.shocksDelivered = shocks;
@@ -1047,6 +1073,7 @@
         const handleManualCheck = () => {
             if (!state.isCprInProgress) return;
             clearInterval(cycleTimerInterval);
+            document.body.classList.remove('flash-active');
             state.isCprInProgress = false;
             state.currentStep = 'ASSESS_RHYTHM';
             addLog('Manual Rhythm Check: Compressions Paused.');
@@ -1056,6 +1083,7 @@
         const resetApp = (clearLog = true) => {
             clearInterval(totalElapsedInterval);
             clearInterval(cycleTimerInterval);
+            document.body.classList.remove('flash-active');
             state.isArrestActive = false;
             state.isCprInProgress = false;
             state.currentStep = 'START';
@@ -1095,6 +1123,7 @@
             if (cycleTimerInterval) clearInterval(cycleTimerInterval);
             cycleTimerValue = cycleDuration;
             cprCycleTimerSmall.textContent = formatTime(cycleTimerValue);
+            document.body.classList.remove('flash-active');
 
             cycleTimerInterval = setInterval(() => {
                 cycleTimerValue--;
@@ -1104,14 +1133,18 @@
                 if (largeTimer) largeTimer.textContent = formatTime(cycleTimerValue);
 
                 if (cycleTimerValue <= 5 && cycleTimerValue > 0) {
+                    document.body.classList.add('flash-active');
                     if (window.Tone && Tone.context.state === 'running') {
                         const synth = new Tone.Synth().toDestination();
                         synth.triggerAttackRelease("C5", "16n");
                     }
+                } else {
+                    document.body.classList.remove('flash-active');
                 }
 
                 if (cycleTimerValue <= 0) {
                     clearInterval(cycleTimerInterval);
+                    document.body.classList.remove('flash-active');
                     state.isCprInProgress = false;
                     state.currentStep = 'ASSESS_RHYTHM';
                     addLog(`Cycle finished. Assess Rhythm.`);
