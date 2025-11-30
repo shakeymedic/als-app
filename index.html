@@ -1528,11 +1528,15 @@
             if (Tone.context.state !== 'running') await Tone.start();
             if (isMetronomeOn) {
                 isMetronomeOn = false;
-                metronomeBtn.innerHTML = `<i data-lucide="volume-x" class="lucide"></i> Metronome Off`;
+                // UPDATED: Keeps the icon small and text short
+                metronomeBtn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro`;
+                metronomeBtn.classList.remove('bg-slate-300', 'text-slate-900'); // Optional: visuals
                 if(metronome) metronome.stop();
             } else {
                 isMetronomeOn = true;
-                metronomeBtn.innerHTML = `<i data-lucide="volume-2" class="lucide"></i> Metronome On`;
+                // UPDATED: Keeps the icon small and text short
+                metronomeBtn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 mr-1"></i> On`; 
+                metronomeBtn.classList.add('bg-slate-300', 'text-slate-900'); // Optional: show active state
                 const synth = new Tone.Synth().toDestination();
                 metronome = new Tone.Loop(time => {
                     synth.triggerAttackRelease("C5", "32n", time);
