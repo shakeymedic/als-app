@@ -5,13 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resus Guide 2025 (ALS/PLS/NLS)</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -52,7 +49,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-    <!-- Summary Modal Overlay -->
     <div id="summary-modal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
             <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
@@ -64,14 +60,10 @@
                 </button>
             </div>
             <div id="summary-content" class="p-6 space-y-4">
-                <!-- Content injected via JS -->
-            </div>
+                </div>
             <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end no-print">
-                <button onclick="copySummaryOnly()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
-                    <i data-lucide="file-text" class="w-4 h-4 mr-2"></i> Copy Summary
-                </button>
-                 <button onclick="copyLogOnly()" class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
-                    <i data-lucide="list" class="w-4 h-4 mr-2"></i> Copy Log
+                <button onclick="copyFullRecord()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                    <i data-lucide="copy" class="w-4 h-4 mr-2"></i> Copy Full Record
                 </button>
                 <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg flex items-center">
                     <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print
@@ -83,12 +75,10 @@
         </div>
     </div>
 
-    <!-- Banner -->
     <div class="bg-yellow-100 border-b-2 border-yellow-300 text-yellow-800 p-2 text-center text-sm font-semibold print:hidden">
         RCUK 2025 Guidelines • Adult • Paediatric • Neonatal
     </div>
 
-    <!-- Header -->
     <div class="flex items-center justify-between p-2 bg-white shadow-sm border-b border-slate-200 print:hidden">
         <div class="w-1/3 flex justify-start pl-4">
             <img src="https://iili.io/KGQOvkl.md.png" alt="Logo" class="h-10">
@@ -106,13 +96,10 @@
         </div> 
     </div>
 
-    <!-- Main Container -->
     <div id="app-container" class="p-4 flex flex-col md:flex-row md:space-x-4 print:hidden flex-grow">
         
-        <!-- Left Panel: Controls, Timers, Inputs -->
         <div class="w-full md:w-2/5 lg:w-1/3 flex flex-col space-y-4 mb-4 md:mb-0">
             
-            <!-- Timer Container -->
             <div id="timer-container" class="bg-white p-4 rounded-xl shadow-lg sticky top-0 z-50 border-b-4 border-slate-300">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="font-bold text-lg text-slate-600">Timers</h3>
@@ -121,10 +108,8 @@
                     </div>
                 </div>
                 
-                <!-- Patient Info Display (Paeds/Neo) -->
                 <div id="patient-info-display" class="hidden mb-3 p-3 rounded-lg text-xs font-mono border-2">
-                    <!-- Content populated by JS -->
-                </div>
+                    </div>
                 
                 <div id="timer-display-normal" class="text-center">
                     <div class="flex justify-between items-end">
@@ -154,7 +139,6 @@
                 </div>
             </div>
 
-            <!-- Controls -->
             <div class="bg-white p-4 rounded-xl shadow-lg">
                  <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Controls</h3>
                  <div class="space-y-3">
@@ -173,13 +157,11 @@
                  </div>
             </div>
             
-             <!-- Interventions & Drugs Panel -->
-            <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
+             <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
                  <div id="interventions-combined-container">
                      <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions & Drugs</h3>
                      <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-2">
-                         <!-- Populated by JS -->
-                     </div>
+                         </div>
                      <div class="mt-4 pt-4 border-t border-slate-200">
                          <div class="flex space-x-2">
                              <input type="text" id="custom-intervention-input" placeholder="Add custom..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
@@ -190,13 +172,11 @@
                      </div>
                  </div>
 
-                 <!-- Reversible Causes (4Hs 4Ts) -->
                  <div id="reversible-causes-container" class="mt-4 pt-4 border-t border-slate-200">
                      <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
                      <div id="causes-checklist" class="space-y-1"></div>
                  </div>
 
-                 <!-- Notes -->
                  <div id="notes-container" class="mt-4 pt-4 border-t border-slate-200">
                      <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
                      <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes..."></textarea>
@@ -204,7 +184,6 @@
             </div>
         </div>
 
-        <!-- Right Panel: Guidance and Log -->
         <div class="w-full md:w-3/5 lg:w-2/3 bg-white p-4 sm:p-6 rounded-xl shadow-lg flex flex-col h-[calc(100vh-140px)] md:h-auto">
             <div class="border-b border-slate-200 mb-4 flex justify-between items-center shrink-0">
                 <nav class="-mb-px flex space-x-6 overflow-x-auto">
@@ -251,7 +230,6 @@
         &copy; WMEBEM 2025. Made by Dr Jake Turner.
     </footer>
 
-    <!-- Tone.js library for metronome -->
     <script type="module">
         import * as Tone from "https://cdn.skypack.dev/tone";
         window.Tone = Tone;
@@ -599,8 +577,9 @@
 
             switch (state.currentStep) {
                 case 'START':
+                    // MODIFIED: Changed justify-center to justify-start and added pt-8
                     content = `
-                        <div class="text-center h-full flex flex-col justify-center">
+                        <div class="text-center h-full flex flex-col justify-start pt-8">
                             <h2 class="text-2xl font-bold text-slate-700 mb-6">Select Protocol</h2>
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                                 <button onclick="setProtocol('ADULT')" class="${state.mode === 'ADULT' ? 'ring-4 ring-blue-500 font-bold bg-blue-700' : 'opacity-70 hover:opacity-100'} bg-blue-600 text-white p-4 rounded-xl shadow-lg transition-all">
@@ -635,8 +614,7 @@
                                     <input type="number" id="input-neo-weight" placeholder="Weight (kg) - Default 3.5" step="0.1" class="p-2 border rounded w-full" onchange="updateNeoWeight(this.value)">
                                 </div>
                                 <div id="neo-results" class="text-xs text-pink-800 hidden mt-3 p-2 bg-white rounded border border-pink-300">
-                                    <!-- Populated by JS -->
-                                </div>
+                                    </div>
                                 <p class="text-xs text-pink-600 mt-2">Enter weight for accurate drug dosing. Default 3.5kg (term baby).</p>
                             </div>` : ''}
 
@@ -1280,67 +1258,64 @@
              summaryModal.classList.add('hidden');
         };
         
-        window.copySummaryOnly = () => {
-             const duration = state.startTime && state.endTime 
+        // MODIFIED: Combined Copy Function
+        window.copyFullRecord = () => {
+            // 1. Generate Log Text
+            let logText = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
+            state.log.forEach(l => {
+                logText += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
+            });
+
+            // 2. Generate Summary Text
+            const duration = state.startTime && state.endTime 
                 ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
-                : "Ongoing";
+                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
             
-            let text = `RESUSCITATION SUMMARY\n`;
-            text += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
-            text += `Total Duration: ${duration}\n`;
-            text += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
-            text += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
-            text += `TOTALS:\n`;
-            text += `- Adrenaline: ${state.counts.adrenaline}\n`;
-            text += `- Amiodarone: ${state.counts.amiodarone}\n`;
-            text += `- Fluids: ${state.counts.fluids}\n`;
-            text += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
-            text += `- Access: ${state.counts.access}\n`;
+            let summaryText = `RESUSCITATION SUMMARY\n`;
+            summaryText += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
+            summaryText += `Total Duration: ${duration}\n`;
+            summaryText += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
+            summaryText += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
+            summaryText += `TOTALS:\n`;
+            summaryText += `- Adrenaline: ${state.counts.adrenaline}\n`;
+            summaryText += `- Amiodarone: ${state.counts.amiodarone}\n`;
+            summaryText += `- Fluids: ${state.counts.fluids}\n`;
+            summaryText += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
+            summaryText += `- Access: ${state.counts.access}\n`;
             
             if (state.wetflag) {
-                text += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
-                text += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
-                text += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
-                text += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
-                text += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
+                summaryText += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
+                summaryText += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
+                summaryText += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
+                summaryText += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
+                summaryText += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
             }
             if (state.mode === 'NEO' && state.patientWeight) {
                 const w = state.patientWeight;
-                text += `\nPATIENT INFO (Neonatal):\n`;
-                text += `Weight: ${w}kg\n`;
-                text += `Adrenaline: ${Math.round(w * 20)}mcg (${(w * 0.2).toFixed(2)}ml 1:10k) | Fluid: ${Math.round(w * 10)}ml\n`;
-                text += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
+                summaryText += `\nPATIENT INFO (Neonatal):\n`;
+                summaryText += `Weight: ${w}kg\n`;
+                summaryText += `Adrenaline: ${Math.round(w * 20)}mcg (${(w * 0.2).toFixed(2)}ml 1:10k) | Fluid: ${Math.round(w * 10)}ml\n`;
+                summaryText += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
             }
             
-            navigator.clipboard.writeText(text).then(() => {
-    const btn = document.querySelector('button[onclick="copySummaryOnly()"]'); // or copyLogOnly
-    const original = btn.innerHTML;
-    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Copied!';
-    setTimeout(() => { 
-        btn.innerHTML = original;
-        lucide.createIcons();
-    }, 1500);
-}).catch(err => {
-    alert("Clipboard access failed. Please select and copy the text manually.");
-});
-        };
-        
-        window.copyLogOnly = () => {
-            let text = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
-            state.log.forEach(l => {
-                text += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
-            });
-            
-             navigator.clipboard.writeText(text).then(() => {
-                const btn = document.querySelector('button[onclick="copyLogOnly()"]');
+            // 3. Combine
+            const fullText = logText + "\n" + "=".repeat(20) + "\n\n" + summaryText;
+
+            // 4. Copy to Clipboard
+            navigator.clipboard.writeText(fullText).then(() => {
+                const btn = document.querySelector('button[onclick="copyFullRecord()"]');
                 const original = btn.innerHTML;
                 btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Copied!';
                 setTimeout(() => { 
                     btn.innerHTML = original;
                     lucide.createIcons();
                 }, 1500);
+            }).catch(err => {
+                alert("Clipboard access failed. Please select and copy the text manually.");
             });
         };
+        
+        // REMOVED: copySummaryOnly and copyLogOnly (replaced by copyFullRecord)
 
         // --- Event Listeners ---
         document.getElementById('guidance-content').addEventListener('click', (e) => {
