@@ -2,41 +2,65 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resus Guide 2025 (ALS/PLS/NLS)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Resus Guide 2025 (Expert Mode)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script type="module">
+        import * as Tone from "https://cdn.skypack.dev/tone";
+        window.Tone = Tone;
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        /* --- STYLE & ACCESSIBILITY --- */
+        body { font-family: 'Inter', sans-serif; color: #000000; background-color: #f8fafc; overscroll-behavior: none; }
         
+        /* High Contrast Overrides */
+        .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800 { color: #000 !important; }
+        .text-slate-400 { color: #333 !important; }
+
         /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        /* Firefox support */
-.custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #94a3b8 #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+
+        /* Animations */
         @keyframes flash-bg {
             0% { background-color: #fee2e2; }
+            50% { background-color: #ffcccc; }
             100% { background-color: #ffffff; }
         }
-        .flash-active {
-            animation: flash-bg 1s infinite;
-        }
+        .flash-active { animation: flash-bg 1s infinite; }
 
-        /* Disabled inputs */
-        input[type="checkbox"]:disabled + label { text-decoration: line-through; color: #64748b; }
+        /* Bottom Nav Fixed */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: #ffffff; border-top: 4px solid #1e293b;
+            display: flex; justify-content: space-around;
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 50; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+            height: 70px; /* Fixed height for calculations */
+        }
+        
+        .bottom-nav-item {
+            flex: 1; text-align: center;
+            color: #64748b; font-weight: 900; font-size: 0.7rem;
+            border: none; background: none; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        
+        .bottom-nav-item.active { color: #2563eb; background-color: #eff6ff; border-top: 4px solid #2563eb; margin-top: -4px; }
+        .bottom-nav-item i { margin-bottom: 4px; width: 24px; height: 24px; }
+
+        /* Content Padding for Bottom Nav */
+        #app-container { padding-bottom: 70px; /* Match bottom nav height */ }
 
         /* Print styles */
         @media print {
@@ -47,193 +71,123 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+<body class="flex flex-col min-h-screen overflow-hidden">
 
-    <div id="summary-modal" class="fixed inset-0 bg-slate-900 bg-opacity-75 z-[100] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col">
-            <div class="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                <h2 class="text-2xl font-bold text-slate-800 flex items-center">
-                    <i data-lucide="clipboard-list" class="mr-2"></i> Resuscitation Summary
+    <div id="summary-modal" class="fixed inset-0 bg-slate-900 bg-opacity-90 z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col border-4 border-slate-800">
+            <div class="p-6 border-b-2 border-slate-200 flex justify-between items-center bg-slate-50">
+                <h2 class="text-2xl font-black text-black flex items-center">
+                    <i data-lucide="clipboard-list" class="mr-2"></i> RESUS SUMMARY
                 </h2>
-                <button onclick="closeSummary()" class="text-slate-400 hover:text-slate-600">
-                    <i data-lucide="x" class="w-6 h-6"></i>
+                <button onclick="closeSummary()" class="text-slate-400 hover:text-black">
+                    <i data-lucide="x" class="w-8 h-8"></i>
                 </button>
             </div>
-            <div id="summary-content" class="p-6 space-y-4">
-                </div>
-            <div class="p-4 border-t border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end no-print">
-                <button onclick="copyFullRecord()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
-                    <i data-lucide="copy" class="w-4 h-4 mr-2"></i> Copy Full Record
+            <div id="summary-content" class="p-6 space-y-4 font-mono text-sm"></div>
+            <div class="p-4 border-t-2 border-slate-200 bg-slate-50 flex gap-2 justify-end no-print">
+                <button onclick="copyFullRecord()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center text-lg shadow-lg">
+                    COPY RECORD
                 </button>
-                <button onclick="window.print()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg flex items-center">
-                    <i data-lucide="printer" class="w-4 h-4 mr-2"></i> Print
-                </button>
-                <button onclick="closeSummary()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-4 rounded-lg">
-                    Close
-                </button>
+                <button onclick="closeSummary()" class="bg-slate-200 hover:bg-slate-300 text-black font-bold py-3 px-6 rounded-lg text-lg">CLOSE</button>
             </div>
         </div>
     </div>
 
-    <div class="bg-yellow-100 border-b-2 border-yellow-300 text-yellow-800 p-2 text-center text-sm font-semibold print:hidden">
-        RCUK 2025 Guidelines • Adult • Paediatric • Neonatal
-    </div>
-
-    <div class="flex items-center justify-between p-2 bg-white shadow-sm border-b border-slate-200 print:hidden">
-        <div class="w-1/3 flex justify-start pl-4">
-            <img src="https://iili.io/KGQOvkl.md.png" alt="Logo" class="h-10">
+    <div class="bg-white shadow-lg border-b-4 border-slate-800 z-40 shrink-0 relative">
+        <div class="flex items-center justify-between p-2 bg-slate-50 print:hidden">
+            <div class="flex items-center">
+                 <img src="https://iili.io/KGQOvkl.md.png" alt="Logo" class="h-8 mr-2">
+                 <div>
+                     <div class="font-black text-black text-sm leading-none tracking-tight">RESUS ASSIST</div>
+                     <div id="protocol-badge" class="text-[10px] font-black uppercase text-slate-500 bg-slate-200 px-1 rounded inline-block mt-1">SELECT MODE</div>
+                 </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="metronome-btn" class="bg-slate-200 hover:bg-slate-300 text-black font-bold py-2 px-3 rounded border border-slate-400 text-xs flex items-center shadow-sm">
+                    <i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> METRO
+                </button>
+                <button id="reset-app-btn" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-3 rounded border border-red-200 text-xs shadow-sm">
+                    NEW
+                </button>
+            </div>
         </div>
-        <div class="w-1/3 text-center flex flex-col items-center justify-center">
-             <span class="font-bold text-slate-700 leading-tight">Resuscitation Assist</span>
-             <a id="guideline-link" href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20ALS%20algorithm%202025.pdf" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 flex items-center mt-1 font-medium hover:underline">
-                <i data-lucide="file-text" class="w-3 h-3 mr-1"></i> <span id="guideline-text">ALS Guidelines 2025</span>
-             </a>
-        </div>
-        <div class="w-1/3 flex justify-end pr-4">
-             <button id="reset-app-btn" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1 rounded border border-slate-300">
-                New Patient
-            </button>
-        </div> 
-    </div>
 
-    <div id="app-container" class="p-4 flex flex-col md:flex-row md:space-x-4 print:hidden flex-grow">
+        <div id="timer-container" class="grid grid-cols-2 divide-x-2 divide-slate-300 bg-white border-t border-slate-200">
+            <div class="p-2 text-center">
+                <p class="text-[10px] uppercase font-black text-slate-400 tracking-wider">TOTAL TIME</p>
+                <p id="total-elapsed-time" class="text-4xl font-black text-black font-mono leading-none tracking-tighter">00:00</p>
+            </div>
+            <div class="p-2 text-center relative bg-slate-50">
+                 <p class="text-[10px] uppercase font-black text-slate-400 tracking-wider">NEXT CHECK</p>
+                 <div class="flex items-center justify-center relative">
+                    <p id="cpr-cycle-timer-small" class="text-4xl font-black text-blue-600 font-mono leading-none tracking-tighter">02:00</p>
+                    <button onclick="resetCycleTimer()" class="absolute -right-1 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 p-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></button>
+                 </div>
+            </div>
+        </div>
         
-        <div class="w-full md:w-2/5 lg:w-1/3 flex flex-col space-y-4 mb-4 md:mb-0">
+        <div id="patient-info-display" class="hidden bg-yellow-100 border-b-2 border-yellow-300 p-2 text-center text-xs font-bold text-black shadow-inner"></div>
+    </div>
+
+    <div id="app-container" class="flex-grow overflow-hidden relative bg-slate-100 flex flex-col md:flex-row">
+        
+        <div id="main-panel" class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar">
             
-            <div id="timer-container" class="bg-white p-4 rounded-xl shadow-lg sticky top-0 z-50 border-b-4 border-slate-300">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="font-bold text-lg text-slate-600">Timers</h3>
-                    <div id="protocol-badge" class="px-2 py-0.5 rounded text-xs font-bold uppercase bg-slate-200 text-slate-600">
-                        Select Mode
-                    </div>
-                </div>
-                
-                <div id="patient-info-display" class="hidden mb-3 p-3 rounded-lg text-xs font-mono border-2">
-                    </div>
-                
-                <div id="timer-display-normal" class="text-center">
-                    <div class="flex justify-between items-end">
-                        <div class="text-left">
-                            <p class="text-xs text-slate-400 uppercase">Total Time</p>
-                            <p id="total-elapsed-time" class="text-3xl font-mono font-bold text-slate-700">00:00</p>
-                        </div>
-                        <div class="text-right">
-                             <p class="text-xs text-slate-400 uppercase">Next Rhythm Check</p>
-                             <div class="flex items-center justify-end space-x-2">
-                                <button onclick="resetCycleTimer()" class="text-xs bg-slate-100 px-1 rounded text-slate-400 hover:text-slate-600" title="Reset Cycle Timer"><i data-lucide="rotate-ccw" class="w-3 h-3 m-0"></i></button>
-                                <p id="cpr-cycle-timer-small" class="text-4xl font-mono font-bold text-blue-600">02:00</p>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="timer-display-rearrest" class="text-center hidden">
-                    <div class="mb-2">
-                        <p class="text-sm text-slate-500">Initial Arrest Time</p>
-                        <p id="initial-arrest-time" class="text-2xl font-mono font-bold text-slate-500">00:00</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-slate-500">Time Since Rearrest</p>
-                        <p id="rearrest-time" class="text-4xl font-mono font-bold text-orange-600">00:00</p>
-                    </div>
-                </div>
+            <div id="guidance-content" class="p-2 flex-grow flex flex-col max-w-2xl mx-auto w-full"></div>
+            
+            <div id="drugs-content" class="hidden p-2 h-full bg-slate-100 overflow-y-auto max-w-2xl mx-auto w-full">
+                 <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-3 pb-4"></div>
+                 
+                 <div class="mt-4 flex space-x-2 p-2 bg-white rounded-xl shadow-sm border border-slate-200">
+                     <input type="text" id="custom-intervention-input" placeholder="Add custom note..." class="flex-grow p-3 bg-slate-50 border-2 border-slate-200 rounded-lg font-bold text-black focus:border-blue-500 outline-none">
+                     <button id="add-intervention-btn" class="bg-black text-white px-6 rounded-lg font-bold shadow-lg active:scale-95 transition-transform"><i data-lucide="plus"></i></button>
+                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-xl shadow-lg">
-                 <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Controls</h3>
-                 <div class="space-y-3">
-                    <button id="manual-check-btn" class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-transform transform hover:scale-105 hidden">
-                        <i data-lucide="activity" class="lucide"></i> Manual Rhythm Check
-                    </button>
-                    <button id="rosc-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-transform transform hover:scale-105 hidden">
-                        <i data-lucide="heart-pulse" class="lucide"></i> ROSC Achieved
-                    </button>
-                    <button id="rearrest-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-transform transform hover:scale-105 hidden">
-                        <i data-lucide="alert-circle" class="lucide"></i> Rearrest
-                    </button>
-                     <button id="end-arrest-btn" class="w-full font-bold py-3 px-2 rounded-lg shadow-md flex items-center justify-center transition-colors bg-slate-400 text-slate-700 cursor-not-allowed">
-                       <i data-lucide="square" class="lucide"></i> End Arrest
-                    </button>
-                 </div>
+            <div id="causes-content" class="hidden p-3 h-full bg-slate-100 overflow-y-auto max-w-2xl mx-auto w-full">
+                <h3 class="font-black text-xl mb-4 text-center text-slate-800 uppercase tracking-wide">Reversible Causes</h3>
+                <div id="causes-checklist" class="grid grid-cols-2 gap-3"></div>
+                <div class="mt-4 p-4 bg-white border-l-4 border-yellow-400 rounded-r-lg shadow-sm text-sm">
+                    <strong>Instructions:</strong><br>
+                    Tap once: <span class="text-red-600 font-bold">SUSPECTED (Red)</span><br>
+                    Tap twice: <span class="text-green-600 font-bold">TREATED (Green)</span>
+                </div>
             </div>
             
-             <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
-                 <div id="interventions-combined-container">
-                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions & Drugs</h3>
-                     <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-2">
-                         </div>
-                     <div class="mt-4 pt-4 border-t border-slate-200">
-                         <div class="flex space-x-2">
-                             <input type="text" id="custom-intervention-input" placeholder="Add custom..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
-                             <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center">
-                                 <i data-lucide="plus" class="w-4 h-4 m-0"></i>
-                             </button>
-                         </div>
-                     </div>
-                 </div>
-
-                 <div id="reversible-causes-container" class="mt-4 pt-4 border-t border-slate-200">
-                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Reversible Causes</h3>
-                     <div id="causes-checklist" class="space-y-1"></div>
-                 </div>
-
-                 <div id="notes-container" class="mt-4 pt-4 border-t border-slate-200">
-                     <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Handover / Notes</h3>
-                     <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes..."></textarea>
-                 </div>
+            <div id="log-content" class="hidden p-0 h-full bg-white w-full">
+                <div class="sticky top-0 bg-slate-50 border-b border-slate-200 p-2 flex justify-between items-center z-10">
+                    <span class="font-bold text-sm text-slate-500 uppercase">Event Log</span>
+                    <button onclick="copyFullRecord()" class="text-blue-600 font-bold text-xs bg-blue-50 px-2 py-1 rounded">COPY ALL</button>
+                </div>
+                <div id="log-list" class="divide-y divide-slate-100"></div>
             </div>
+
+            <div id="special-circs-content" class="hidden p-4 h-full bg-white overflow-y-auto w-full prose prose-sm max-w-none"></div>
         </div>
-
-        <div class="w-full md:w-3/5 lg:w-2/3 bg-white p-4 sm:p-6 rounded-xl shadow-lg flex flex-col h-[calc(100vh-140px)] md:h-auto">
-            <div class="border-b border-slate-200 mb-4 flex justify-between items-center shrink-0">
-                <nav class="-mb-px flex space-x-6 overflow-x-auto">
-                    <button id="guidance-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-blue-500 text-blue-600">
-                        Guidance
-                    </button>
-                    <button id="log-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-    <div class="flex items-center">
-        <i data-lucide="history" class="h-5 w-5 mr-2"></i> Event Log
     </div>
-</button>
-<button id="special-circs-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-    <div class="flex items-center">
-        <i data-lucide="alert-triangle" class="h-5 w-5 mr-2"></i> Special Circs
-    </div>
-</button>
-                </nav>
-                <div class="flex items-center ml-4">
-                    <button id="metronome-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg mr-2 border border-slate-300 flex items-center">
-                        <i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro
-                    </button>
-                    <button id="view-summary-btn" onclick="openSummaryModal()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2 px-3 rounded-lg mr-2 border border-slate-300">
-                        Summary
-                    </button>
-                    <button id="print-log-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg shadow-sm flex items-center transition-colors hidden mr-2">
-                        <i data-lucide="printer" class="lucide-sm"></i> <span class="hidden sm:inline">Print</span>
-                    </button>
-                    <button id="copy-log-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2 px-3 rounded-lg shadow-sm flex items-center transition-colors hidden">
-                        <i data-lucide="copy" class="lucide-sm"></i> <span class="hidden sm:inline">Copy</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div id="content-area" class="flex-grow overflow-y-auto pr-2 pl-2 custom-scrollbar relative">
-                <div id="guidance-content" class="h-full"></div>
-                <div id="log-content" class="hidden"></div>
-                <div id="special-circs-content" class="hidden"></div>
-            </div>
-        </div>
 
+    <div class="bottom-nav no-print">
+        <button class="bottom-nav-item active" id="tab-guidance">
+            <i data-lucide="activity"></i>
+            <span>GUIDE</span>
+        </button>
+        <button class="bottom-nav-item" id="tab-drugs">
+            <i data-lucide="syringe"></i>
+            <span>DRUGS</span>
+        </button>
+        <button class="bottom-nav-item" id="tab-causes">
+            <i data-lucide="stethoscope"></i>
+            <span>4H 4T</span>
+        </button>
+        <button class="bottom-nav-item" id="tab-log">
+            <i data-lucide="clipboard-list"></i>
+            <span>LOG</span>
+        </button>
+        <button class="bottom-nav-item" id="tab-more">
+            <i data-lucide="menu"></i>
+            <span>MORE</span>
+        </button>
     </div>
-    
-    <footer class="mt-4 mb-4 text-center text-xs text-slate-400 no-print">
-        &copy; WMEBEM 2025. Made by Dr Jake Turner.
-    </footer>
-
-    <script type="module">
-        import * as Tone from "https://cdn.skypack.dev/tone";
-        window.Tone = Tone;
-    </script>
 
     <script>
         // --- Application State ---
@@ -245,91 +199,47 @@
             algorithmPath: null,
             cycleCount: 0,
             shocksDelivered: 0,
+            lastAdrenalineTime: 0,
             counts: {
-                adrenaline: 0,
-                amiodarone: 0,
-                fluids: 0,
-                glucose: 0,
-                access: 0,
-                sga: 0,
-                ett: 0,
-                shocks: 0
+                adrenaline: 0, amiodarone: 0, fluids: 0, glucose: 0,
+                access: 0, sga: 0, ett: 0, shocks: 0
             },
             log: [],
-            startTime: null,
-            endTime: null,
-            roscTime: null,
-            rearrestTime: null,
-            isRearrestActive: false,
+            startTime: null, endTime: null,
             // Paeds/Neo Specific
-            patientWeight: 0,
-            patientAge: 0,
-            wetflag: null
+            patientWeight: 0, patientAge: 0, wetflag: null
         };
+
+        // State for causes (0: Neutral, 1: Suspected, 2: Treated)
+        let causesState = {};
+        const reversibleCauses = [
+            { id: 'hypoxia', name: 'Hypoxia' }, { id: 'hypovolaemia', name: 'Hypovolaemia' },
+            { id: 'hypo-hyperkalaemia', name: 'Hyper/Hypokal' }, { id: 'hypothermia', name: 'Hypothermia' },
+            { id: 'thrombosis', name: 'Thrombosis' }, { id: 'tamponade', name: 'Tamponade' },
+            { id: 'toxins', name: 'Toxins' }, { id: 'tension-pneumo', name: 'Tension Pneumo' },
+        ];
 
         // --- Timers & Metronome ---
         let totalElapsedInterval = null;
         let cycleTimerInterval = null;
         let cycleTimerValue = 120;
-        let cycleDuration = 120; // Default 2 mins
+        let cycleDuration = 120;
         let metronome = null;
         let isMetronomeOn = false;
 
         // --- DOM Elements ---
         const totalElapsedTimeElem = document.getElementById('total-elapsed-time');
-        const timerDisplayNormal = document.getElementById('timer-display-normal');
-        const timerDisplayRearrest = document.getElementById('timer-display-rearrest');
-        const initialArrestTimeElem = document.getElementById('initial-arrest-time');
-        const rearrestTimeElem = document.getElementById('rearrest-time');
         const cprCycleTimerSmall = document.getElementById('cpr-cycle-timer-small');
-        const timerContainer = document.getElementById('timer-container');
         const patientInfoDisplay = document.getElementById('patient-info-display');
-
-        const roscBtn = document.getElementById('rosc-btn');
-        const rearrestBtn = document.getElementById('rearrest-btn');
-        const metronomeBtn = document.getElementById('metronome-btn');
-        const endArrestBtn = document.getElementById('end-arrest-btn');
-        const manualCheckBtn = document.getElementById('manual-check-btn');
-        const guidanceTab = document.getElementById('guidance-tab');
-        const logTab = document.getElementById('log-tab');
-        const specialCircsTab = document.getElementById('special-circs-tab');
-        const guidanceContent = document.getElementById('guidance-content');
-        const logContent = document.getElementById('log-content');
-        const specialCircsContent = document.getElementById('special-circs-content');
-        const copyLogBtn = document.getElementById('copy-log-btn');
-        const printLogBtn = document.getElementById('print-log-btn');
         const protocolBadge = document.getElementById('protocol-badge');
-        
-        const leftPanelCombinedContainer = document.getElementById('left-panel-combined'); 
-        const customInterventionInput = document.getElementById('custom-intervention-input');
-        const addInterventionBtn = document.getElementById('add-intervention-btn');
+        const guidanceContent = document.getElementById('guidance-content');
         const interventionsButtonsGrid = document.getElementById('interventions-buttons-grid');
-        const causesChecklist = document.getElementById('causes-checklist');
-        
-        const summaryModal = document.getElementById('summary-modal');
-        const summaryContent = document.getElementById('summary-content');
-        const viewSummaryBtn = document.getElementById('view-summary-btn');
-
-        // --- Data ---
-        const reversibleCauses = [
-            { id: 'hypoxia', name: 'Hypoxia' },
-            { id: 'hypovolaemia', name: 'Hypovolaemia' },
-            { id: 'hypo-hyperkalaemia', name: 'Hypo/Hyperkalaemia' },
-            { id: 'hypothermia', name: 'Hypothermia' },
-            { id: 'thrombosis', name: 'Thrombosis' },
-            { id: 'tamponade', name: 'Tamponade (Cardiac)' },
-            { id: 'toxins', name: 'Toxins' },
-            { id: 'tension-pneumo', name: 'Tension Pneumothorax' },
-        ];
+        const logList = document.getElementById('log-list');
 
         // --- WETFLAG Logic ---
         const calculateWetflag = (age) => {
-            const a = parseFloat(age);
-            if (isNaN(a)) return null;
-            let weight;
-            if (a < 1) weight = (0.5 * a * 12) + 4; 
-            else if (a >= 1 && a <= 10) weight = (a + 4) * 2;
-            else weight = (a * 3) + 7;
+            const a = parseFloat(age); if (isNaN(a)) return null;
+            let weight = (a < 1) ? (0.5 * a * 12) + 4 : ((a <= 10) ? (a + 4) * 2 : (a * 3) + 7);
             return generateWetflagFromWeight(weight, a);
         };
 
@@ -338,16 +248,16 @@
                 weight: weight.toFixed(1),
                 energy: Math.round(weight * 4),
                 fluids: Math.round(weight * 10),
-                adrenaline_vol: (weight * 0.1).toFixed(2), // 1:10k (0.1ml/kg)
+                adrenaline_vol: (weight * 0.1).toFixed(2),
                 adrenaline_mcg: Math.round(weight * 10),
                 amiodarone: Math.round(weight * 5),
-                glucose: Math.round(weight * 2), // 2ml/kg
+                glucose: Math.round(weight * 2),
                 tube_uncuffed: (age/4) + 4,
                 tube_cuffed: (age/4) + 3.5
             };
         }
 
-        // --- Helper Functions ---
+        // --- Helpers ---
         const formatTime = (seconds) => {
             if (isNaN(seconds) || seconds < 0) return "00:00";
             const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -355,777 +265,438 @@
             return `${mins}:${secs}`;
         };
         
-        const formatDateTime = (date) => {
-            if (!date) return "--:--";
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
+        const formatDateTime = (date) => date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "--:--";
 
         const addLog = (message) => {
             const elapsed = state.startTime ? Math.floor((new Date() - state.startTime) / 1000) : 0;
-            const newLogEntry = {
-                time: new Date(),
-                elapsed: elapsed,
-                message: message,
-            };
-            state.log = [newLogEntry, ...state.log].sort((a,b) => a.elapsed - b.elapsed);
+            state.log.unshift({ time: new Date(), elapsed: elapsed, message: message });
             renderLog();
         };
 
-        const provideButtonFeedback = (button) => {
-            button.classList.add('scale-95', 'opacity-80');
-            setTimeout(() => {
-                button.classList.remove('scale-95', 'opacity-80');
-            }, 100);
-        };
-
-        // --- Patient Info Display Update ---
-        const updatePatientInfoDisplay = () => {
-            if (!state.isArrestActive) {
-                patientInfoDisplay.classList.add('hidden');
-                return;
-            }
-            
-            if (state.mode === 'PAEDS' && state.wetflag) {
-                const wf = state.wetflag;
-                const tubeDepth = (wf.tube_uncuffed * 3).toFixed(1);
-                patientInfoDisplay.className = "mb-3 p-3 rounded-lg text-xs font-mono border-2 bg-teal-50 border-teal-300";
-                patientInfoDisplay.innerHTML = `
-                    <div class="font-bold text-teal-800 mb-2 text-center text-sm">WETFLAG Quick Reference</div>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-1 text-teal-900">
-                        <div><span class="font-bold">Weight:</span> ${wf.weight}kg</div>
-                        <div><span class="font-bold">Energy:</span> ${wf.energy}J (4J/kg)</div>
-                        <div><span class="font-bold">Fluid:</span> ${wf.fluids}ml (10ml/kg)</div>
-                        <div><span class="font-bold">Adr:</span> ${wf.adrenaline_mcg}mcg (${wf.adrenaline_vol}ml 1:10k)</div>
-                        <div><span class="font-bold">Amio:</span> ${wf.amiodarone}mg (5mg/kg)</div>
-                        <div><span class="font-bold">Glucose:</span> ${wf.glucose}ml (2ml/kg 10%)</div>
-                        <div class="col-span-2 sm:col-span-3 border-t border-teal-200 pt-1 mt-1">
-                            <span class="font-bold">ETT:</span> Uncuffed ${wf.tube_uncuffed.toFixed(1)}mm @ ${tubeDepth}cm | Cuffed ${wf.tube_cuffed.toFixed(1)}mm
-                        </div>
-                    </div>
-                `;
-                patientInfoDisplay.classList.remove('hidden');
-            } else if (state.mode === 'NEO' && state.patientWeight) {
-                const w = state.patientWeight;
-                const adrVol = (w * 0.2).toFixed(2);
-                const adrMcg = Math.round(w * 20);
-                const fluid = Math.round(w * 10);
-                const glucose = Math.round(w * 2);
-                // Neo tube sizing: typically 2.5-4.0mm depending on weight
-                const tubeSize = w < 1 ? 2.5 : (w < 2 ? 3.0 : (w < 3 ? 3.5 : 3.5));
-                const tubeDepth = w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10));
-                
-                patientInfoDisplay.className = "mb-3 p-3 rounded-lg text-xs font-mono border-2 bg-pink-50 border-pink-300";
-                patientInfoDisplay.innerHTML = `
-                    <div class="font-bold text-pink-800 mb-2 text-center text-sm">Neonatal Quick Reference</div>
-                    <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-pink-900">
-                        <div><span class="font-bold">Weight:</span> ${w}kg</div>
-                        <div><span class="font-bold">Energy:</span> ${Math.round(w * 4)}J (4J/kg)</div>
-                        <div><span class="font-bold">Adr:</span> ${adrMcg}mcg (${adrVol}ml 1:10k)</div>
-                        <div><span class="font-bold">Fluid:</span> ${fluid}ml (10ml/kg 0.9% NaCl)</div>
-                        <div><span class="font-bold">Glucose:</span> ${glucose}ml (2ml/kg 10% dext)</div>
-                        <div><span class="font-bold">ETT:</span> ${tubeSize}mm @ ${tubeDepth}cm (lip)</div>
-                    </div>
-                `;
-                patientInfoDisplay.classList.remove('hidden');
-            } else {
-                patientInfoDisplay.classList.add('hidden');
-            }
-        };
-
-        // --- Protocol Selection ---
-        const setProtocol = (mode) => {
-            state.mode = mode;
-            const link = document.getElementById('guideline-link');
-            const linkText = document.getElementById('guideline-text');
-            
-            if (mode === 'NEO') {
-                cycleDuration = 30; // 30s cycles for NLS
-                protocolBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-700";
-                protocolBadge.innerText = "NEONATAL NLS";
-                timerContainer.classList.remove('border-blue-500', 'border-teal-500');
-                timerContainer.classList.add('border-pink-500');
-                link.href = "https://www.resus.org.uk/sites/default/files/2025-11/RCUK%20G2025%20NEO%20NLS%20Oct%20V2%201.pdf";
-                linkText.innerText = "NLS Guidelines 2025";
-            } else if (mode === 'PAEDS') {
-                cycleDuration = 120;
-                protocolBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase bg-teal-100 text-teal-700";
-                protocolBadge.innerText = "PAEDIATRIC PLS";
-                timerContainer.classList.remove('border-blue-500', 'border-pink-500');
-                timerContainer.classList.add('border-teal-500');
-                link.href = "https://www.resus.org.uk/sites/default/files/2025-10/Paediatric%20advanced%20life%20support%20algorithm%202025.pdf";
-                linkText.innerText = "PLS Guidelines 2025";
-            } else {
-                cycleDuration = 120;
-                protocolBadge.className = "px-2 py-0.5 rounded text-xs font-bold uppercase bg-blue-100 text-blue-700";
-                protocolBadge.innerText = "ADULT ALS";
-                timerContainer.classList.remove('border-pink-500', 'border-teal-500');
-                timerContainer.classList.add('border-blue-500');
-                link.href = "https://www.resus.org.uk/sites/default/files/2025-10/Adult%20ALS%20algorithm%202025.pdf";
-                linkText.innerText = "ALS Guidelines 2025";
-            }
-            
-            cycleTimerValue = cycleDuration;
-            cprCycleTimerSmall.innerText = formatTime(cycleDuration);
-            renderGuidance();
-        };
-
-        // --- Rendering ---
-        const renderInterventionButtons = () => {
-            let html = '';
-            
-            // Utility for badge rendering
-            const badge = (count) => {
-                if(count > 0) {
-                    return `
-                    <div class="absolute top-1 right-1 flex items-center space-x-1">
-                        <div class="decrement-btn bg-white/30 hover:bg-white/50 text-white rounded-full w-6 h-6 flex items-center justify-center cursor-pointer text-xs font-bold" title="Undo">-</div>
-                        <span class="bg-white text-slate-800 text-xs font-bold px-1.5 rounded-full shadow border border-slate-200">${count}</span>
-                    </div>`;
-                }
-                return '';
-            };
-            
-            // Utility for Airway Toggle
-            const airwayStatus = (isActive) => isActive ? 
-                `<span class="absolute top-1 right-1 bg-green-500 text-white text-[10px] font-bold px-1.5 rounded shadow">ACTIVE</span>` : '';
-            
-            const airwayClass = (isActive) => isActive ? 
-                `bg-slate-200 text-slate-900 border-green-500 ring-1 ring-green-500` : 
-                `bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300`;
-
-            // Standard Buttons (Airway Split + Access)
-            html += `
-                <button data-intervention="airway_sga" class="relative w-full ${airwayClass(state.counts.sga > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
-                    Airway (SGA/iGel) ${airwayStatus(state.counts.sga > 0)}
-                </button>
-                <button data-intervention="airway_ett" class="relative w-full ${airwayClass(state.counts.ett > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
-                    Airway (ETT) ${airwayStatus(state.counts.ett > 0)}
-                </button>
-                <div class="col-span-2">
-                     <button data-intervention="access" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
-                        IV/IO Access Secured ${badge(state.counts.access)}
-                     </button>
-                </div>
-            `;
-
-            // Dynamic Buttons
-            if (state.mode === 'ADULT') {
-                 html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
-                        Adrenaline 1mg ${badge(state.counts.adrenaline)}
-                    </button>
-                    <button data-drug="amiodarone" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
-                        Amiodarone ${badge(state.counts.amiodarone)}
-                        <span class="block text-[10px] opacity-80 font-normal">300mg / 150mg</span>
-                    </button>
-                    <button data-drug="fluids" class="relative col-span-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
-                        Fluid 500ml ${badge(state.counts.fluids)}
-                    </button>
-                 `;
-            } else if (state.mode === 'PAEDS' && state.wetflag) {
-                 const wf = state.wetflag;
-                 html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                        <span>Adrenaline ${wf.adrenaline_mcg}mcg</span>
-                        <span class="text-[10px] font-normal opacity-90">(${wf.adrenaline_vol}ml of 1:10k)</span>
-                        ${badge(state.counts.adrenaline)}
-                    </button>
-                    <button data-drug="amiodarone" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                         <span>Amiodarone ${wf.amiodarone}mg</span>
-                         ${badge(state.counts.amiodarone)}
-                    </button>
-                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                        <span>Fluid ${wf.fluids}ml</span>
-                        ${badge(state.counts.fluids)}
-                    </button>
-                    <button data-drug="glucose" class="relative w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                        <span>Glucose ${wf.glucose}ml</span>
-                        <span class="text-[10px] font-normal opacity-90">(10%)</span>
-                        ${badge(state.counts.glucose)}
-                    </button>
-                 `;
-            } else if (state.mode === 'NEO') {
-                 const w = state.patientWeight || 3.5;
-                 const adrVol = (w * 0.2).toFixed(2); // 20mcg/kg
-                 const fluid = Math.round(w * 10);
-                 
-                 html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                        <span>Adrenaline ${adrVol}ml</span>
-                        <span class="text-[10px] font-normal opacity-90">(1:10,000)</span>
-                        ${badge(state.counts.adrenaline)}
-                    </button>
-                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
-                        <span>Fluid ${fluid}ml</span>
-                        <span class="text-[10px] font-normal opacity-90">(Saline / O-)</span>
-                        ${badge(state.counts.fluids)}
-                    </button>
-                 `;
-            } else {
-                 html += `<div class="col-span-2 text-center text-sm text-slate-400 italic p-2">Select protocol to see drugs</div>`;
-            }
-            interventionsButtonsGrid.innerHTML = html;
-        };
+        // --- CORE RENDER FUNCTIONS ---
 
         const renderGuidance = () => {
             let content = '';
-            
-            // Check for advanced airway for CPR logic
             const hasAdvancedAirway = state.counts.sga > 0 || state.counts.ett > 0;
-            const cprText = hasAdvancedAirway ? 'Continuous Compressions' : (state.mode === 'NEO' ? '3:1 Ratio' : (state.mode === 'PAEDS' ? '15:2 Ratio' : '30:2 Ratio'));
-            const ventText = hasAdvancedAirway ? 'Ventilations independent of compressions (appropriate rate)' : '';
+            
+            // --- ANTICIPATORY GUIDANCE LOGIC ---
+            let actionBanner = '';
+            
+            // Adult ALS Anticipation
+            if (state.mode === 'ADULT' && state.currentStep === 'PERFORMING_CPR') {
+                // Prepare Drugs (Cycle BEFORE they are due)
+                if (state.shocksDelivered === 2) {
+                     actionBanner = `
+                     <div class="bg-yellow-100 border-l-8 border-yellow-500 p-4 mb-4 animate-pulse shadow-md rounded-r">
+                        <p class="font-black text-yellow-800 text-xs uppercase tracking-widest">ANTICIPATION</p>
+                        <p class="text-xl font-black text-black">PREPARE ADRENALINE & AMIODARONE</p>
+                        <p class="text-sm font-bold text-slate-800 mt-1">Give after next shock</p>
+                     </div>`;
+                }
+                // Give Drugs (Cycle WHEN they are due)
+                else if (state.shocksDelivered === 3 && state.counts.adrenaline === 0) {
+                     actionBanner = `
+                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow-md rounded-r">
+                        <p class="font-black text-purple-800 text-xs uppercase tracking-widest">ACTION REQUIRED</p>
+                        <p class="text-2xl font-black text-purple-900">GIVE ADRENALINE (1mg) NOW</p>
+                        <p class="text-2xl font-black text-orange-800 mt-2">GIVE AMIODARONE (300mg) NOW</p>
+                     </div>`;
+                }
+                else if (state.shocksDelivered >= 5 && state.cycleCount % 2 !== 0 && (Date.now() - state.lastAdrenalineTime > 180000)) { 
+                     actionBanner = `
+                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow-md rounded-r">
+                        <p class="font-black text-purple-800 text-xs uppercase tracking-widest">ACTION REQUIRED</p>
+                        <p class="text-2xl font-black text-purple-900">GIVE ADRENALINE (1mg)</p>
+                     </div>`;
+                }
+            }
 
             switch (state.currentStep) {
                 case 'START':
-                    // MODIFIED: Changed justify-center to justify-start and added pt-8
                     content = `
-                        <div class="text-center h-full flex flex-col justify-start pt-8">
-                            <h2 class="text-2xl font-bold text-slate-700 mb-6">Select Protocol</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                                <button onclick="setProtocol('ADULT')" class="${state.mode === 'ADULT' ? 'ring-4 ring-blue-500 font-bold bg-blue-700' : 'opacity-70 hover:opacity-100'} bg-blue-600 text-white p-4 rounded-xl shadow-lg transition-all">
-                                    <div class="text-lg">Adult ALS</div>
+                        <div class="flex flex-col h-full pt-4">
+                            <h2 class="text-3xl font-black text-center mb-6 tracking-tight">SELECT PROTOCOL</h2>
+                            <div class="space-y-4 px-2">
+                                <button onclick="setProtocol('ADULT')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-blue-600 bg-white text-blue-900 hover:bg-blue-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-blue-100 opacity-20"></div>
+                                    ADULT ALS
                                 </button>
-                                <button onclick="setProtocol('PAEDS')" class="${state.mode === 'PAEDS' ? 'ring-4 ring-teal-500 font-bold bg-teal-600' : 'opacity-70 hover:opacity-100'} bg-teal-500 text-white p-4 rounded-xl shadow-lg transition-all">
-                                    <div class="text-lg">Paediatric PLS</div>
+                                <button onclick="setProtocol('PAEDS')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-teal-600 bg-white text-teal-900 hover:bg-teal-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-teal-100 opacity-20"></div>
+                                    PAEDIATRIC PLS
                                 </button>
-                                <button onclick="setProtocol('NEO')" class="${state.mode === 'NEO' ? 'ring-4 ring-pink-500 font-bold bg-pink-600' : 'opacity-70 hover:opacity-100'} bg-pink-500 text-white p-4 rounded-xl shadow-lg transition-all">
-                                    <div class="text-lg">Neonatal NLS</div>
+                                <button onclick="setProtocol('NEO')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-pink-600 bg-white text-pink-900 hover:bg-pink-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-pink-100 opacity-20"></div>
+                                    NEONATAL NLS
                                 </button>
                             </div>
                             
                             ${state.mode === 'PAEDS' ? `
-                            <div class="bg-teal-50 p-4 rounded-lg mb-6 text-left border border-teal-200">
-                                <h3 class="font-bold text-teal-700 mb-2">WETFLAG Calculator</h3>
-                                <div class="flex space-x-2 mb-2">
-                                    <input type="number" id="input-age" placeholder="Age (years)" class="p-2 border rounded w-1/3">
-                                    <input type="number" id="input-weight" placeholder="Weight (kg)" class="p-2 border rounded w-1/3" onchange="updatePaedsCalc(this.value, 'weight')">
-                                    <button onclick="updatePaedsCalc(document.getElementById('input-age').value, 'age')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-1/3 shadow">
-                                        Calculate
-                                    </button>
+                            <div class="mt-6 bg-teal-50 p-4 rounded-xl border-2 border-teal-200">
+                                <h3 class="font-bold text-teal-900 mb-2">WETFLAG Calculator</h3>
+                                <div class="flex space-x-2">
+                                    <input type="number" id="input-age" placeholder="Age" class="p-3 border-2 border-teal-300 rounded-lg w-1/3 font-bold text-lg text-center">
+                                    <button onclick="updatePaedsCalc(document.getElementById('input-age').value, 'age')" class="bg-teal-600 text-white font-bold py-3 px-4 rounded-lg flex-grow shadow-md">Calculate</button>
                                 </div>
-                                <div id="wetflag-results" class="text-xs text-teal-800 hidden mt-3 p-2 bg-white rounded border border-teal-300">
-                                    </div>
                             </div>` : ''}
 
                             ${state.mode === 'NEO' ? `
-                             <div class="bg-pink-50 p-4 rounded-lg mb-6 text-left border border-pink-200">
-                                <h3 class="font-bold text-pink-700 mb-2">Neonatal Weight</h3>
-                                <div class="flex space-x-2 mb-2">
-                                    <input type="number" id="input-neo-weight" placeholder="Weight (kg) - Default 3.5" step="0.1" class="p-2 border rounded w-full" onchange="updateNeoWeight(this.value)">
-                                </div>
-                                <div id="neo-results" class="text-xs text-pink-800 hidden mt-3 p-2 bg-white rounded border border-pink-300">
-                                    </div>
-                                <p class="text-xs text-pink-600 mt-2">Enter weight for accurate drug dosing. Default 3.5kg (term baby).</p>
+                             <div class="mt-6 bg-pink-50 p-4 rounded-xl border-2 border-pink-200">
+                                <h3 class="font-bold text-pink-900 mb-2">Neonatal Weight</h3>
+                                <input type="number" placeholder="Weight (kg)" step="0.1" class="p-3 border-2 border-pink-300 rounded-lg w-full font-bold text-lg text-center" onchange="updateNeoWeight(this.value)">
                             </div>` : ''}
-
-                            <div class="space-y-4">
-                                <button id="start-arrest-btn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 px-4 rounded-lg text-xl shadow-lg flex items-center justify-center">
-                                    <i data-lucide="play" class="lucide"></i> Start New Arrest (Time 00:00)
-                                </button>
-                                <button id="pre-arrested-btn" class="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-4 px-4 rounded-lg text-xl shadow-lg flex items-center justify-center">
-                                    <i data-lucide="ambulance" class="lucide"></i> Patient Arrived in Arrest
-                                </button>
-                            </div>
                         </div>`;
                     break;
 
-                case 'PRE_ARREST_INFO':
-                     content = `
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-700 mb-4 text-center">Pre-Arrival Information</h2>
-                            <div class="space-y-4 text-slate-800 bg-slate-100 p-4 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Cycles Completed:</label>
-                                    <input type="number" id="pre-cycles" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Shocks Delivered:</label>
-                                    <input type="number" id="pre-shocks" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Adrenaline Given:</label>
-                                    <input type="number" id="pre-adrenaline" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Amiodarone Given:</label>
-                                    <input type="number" id="pre-amiodarone" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                            </div>
-                            <div class="mt-8">
-                                <button id="continue-from-pre-arrest-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl shadow-lg flex items-center justify-center">
-                                    Continue to Rhythm Check
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    break;
                 case 'ASSESS_RHYTHM':
-                    content = `
-                        <div class="text-center">
-                            <h2 class="text-2xl font-bold text-yellow-500 flex items-center justify-center mb-6"><i data-lucide="alert-triangle" class="mr-2"></i>Assess Rhythm</h2>
-                            ${state.mode === 'NEO' ? 
-                            `<div class="p-4 bg-pink-50 rounded text-left mb-4 text-sm">
-                                <p><strong>HR < 60?</strong> Start Compressions (3:1)</p>
-                                <p><strong>HR > 60?</strong> Stop Compressions. Ventilate.</p>
-                             </div>` : 
-                            `<p class="text-slate-600 mb-6">Is the rhythm shockable?</p>`}
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button id="shockable-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-6 px-4 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105">
-                                    ${state.mode === 'NEO' ? 'HR < 60 (Start 3:1)' : 'Shockable (VF/pVT)'}
+                     content = `
+                        <div class="flex flex-col h-full justify-center px-2">
+                            <div class="text-center mb-8">
+                                <div class="inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full font-bold text-sm mb-4 border border-yellow-300 animate-pulse">CHECK PATIENT</div>
+                                <h2 class="text-4xl font-black text-black tracking-tight">ASSESS RHYTHM</h2>
+                                <p class="text-lg font-bold text-slate-500 mt-2">Is it Shockable?</p>
+                            </div>
+                            <div class="grid grid-cols-1 gap-6">
+                                <button onclick="handleRhythmChoice(true)" class="bg-red-600 text-white font-black text-3xl py-10 rounded-2xl shadow-xl hover:bg-red-700 active:scale-95 border-b-8 border-red-800 flex flex-col items-center">
+                                    SHOCKABLE
+                                    <span class="text-lg font-bold text-red-100 mt-1 opacity-90">VF / pVT</span>
                                 </button>
-                                <button id="non-shockable-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-6 px-4 rounded-lg text-lg shadow-md transition-transform transform hover:scale-105">
-                                    ${state.mode === 'NEO' ? 'HR > 60 (Ventilate)' : 'Non-Shockable (PEA/Asystole)'}
+                                <button onclick="handleRhythmChoice(false)" class="bg-blue-600 text-white font-black text-3xl py-10 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 border-b-8 border-blue-800 flex flex-col items-center">
+                                    NON-SHOCKABLE
+                                    <span class="text-lg font-bold text-blue-100 mt-1 opacity-90">PEA / Asystole</span>
                                 </button>
                             </div>
                         </div>`;
                     break;
+
                 case 'SHOCKABLE':
-                    const energy = (state.wetflag) ? `${state.wetflag.energy}J` : (state.mode === 'ADULT' ? '150-200J' : '4 J/kg');
-                    content = `
-                        <div class="text-center h-full flex flex-col justify-start pt-8">
-                            <h2 class="text-3xl font-bold text-red-500 mb-2">Shockable Rhythm</h2>
-                            <p class="text-slate-500 mb-8">Energy: <strong>${energy}</strong></p>
-                            <button id="deliver-shock-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-8 px-4 rounded-xl text-2xl shadow-xl flex items-center justify-center animate-pulse">
-                                <i data-lucide="zap" class="lucide w-8 h-8 mr-2"></i> Deliver Shock ${state.shocksDelivered + 1}
+                     content = `
+                        <div class="flex flex-col h-full justify-center px-4 bg-red-50 -mx-2 rounded-xl border-4 border-red-100">
+                            <div class="text-center mb-6">
+                                <h2 class="text-4xl font-black text-red-600 mb-4 tracking-tighter">SHOCKABLE</h2>
+                                <div class="text-3xl font-black bg-white inline-block px-8 py-3 rounded-xl shadow-lg border-2 border-red-200">
+                                    Energy: ${state.wetflag ? state.wetflag.energy + 'J' : (state.mode === 'ADULT' ? '150-200 J' : '4 J/kg')}
+                                </div>
+                            </div>
+                            <button onclick="handleDeliverShock()" class="w-full bg-red-600 text-white font-black text-4xl py-12 rounded-3xl shadow-2xl animate-pulse border-4 border-white ring-4 ring-red-300 active:bg-red-700 active:scale-95 transition-transform">
+                                <i data-lucide="zap" class="inline w-10 h-10 mr-2 -mt-2"></i> SHOCK ${state.shocksDelivered + 1}
                             </button>
+                            <p class="text-center font-black text-red-800 mt-8 text-xl uppercase tracking-widest">Ensure Everyone Clear</p>
                         </div>`;
-                    break;
+                     break;
+
                 case 'PERFORMING_CPR':
-                    let considerations = '';
-                   
-                    if (state.mode === 'ADULT') {
-                        if (state.shocksDelivered >= 3 && state.cycleCount % 2 !== 0) considerations += `<li class="text-purple-600 font-bold">Give Adrenaline 1mg</li>`;
-                        if (state.shocksDelivered === 3) considerations += `<li class="text-orange-600 font-bold">Give Amiodarone 300mg</li>`;
-                        if (state.shocksDelivered === 5) considerations += `<li class="text-orange-600 font-bold">Give Amiodarone 150mg</li>`;
-                        if (state.shocksDelivered >= 3) considerations += `<li class="text-blue-600 font-semibold">Consider Changing Pad Vector (e.g. AP)</li>`;
-                        
-                    } else if (state.mode === 'PAEDS') {
-                        const adr = state.wetflag ? state.wetflag.adrenaline_mcg + 'mcg' : '10mcg/kg';
-                        if (state.shocksDelivered >= 3 && state.cycleCount % 2 !== 0) considerations += `<li class="text-purple-600 font-bold">Give Adrenaline ${adr}</li>`;
-                         if (state.shocksDelivered === 3 || state.shocksDelivered === 5) considerations += `<li class="text-orange-600 font-bold">Give Amiodarone 5mg/kg</li>`;
-                        
-                        // NEW: DOPE check for Paeds
-                        if(!hasAdvancedAirway) considerations += `<li>Ensure 15:2 Ratio</li>`;
-                        if (state.cycleCount > 1) considerations += `<li class="text-slate-500 italic">Check Tube: DOPE (Displacement, Obstruction, Pneumothorax)</li>`;
+                     content = `
+                        <div class="flex flex-col h-full text-center px-1">
+                            ${actionBanner}
 
-                    } else if (state.mode === 'NEO') {
-                         if(!hasAdvancedAirway) considerations += `<li>Ensure 3:1 Ratio (Synchronised)</li>`;
-                         considerations += `<li>Focus on Aeration</li>`;
-                         
-                         // NEW: Mask seal prompt for Neo
-                         considerations += `<li class="text-blue-600 font-semibold">Check Mask Seal & Head Position</li>`;
-                         
-                         if (state.cycleCount > 2) considerations += `<li class="text-purple-600 font-bold">Consider Adrenaline if HR < 60 despite effective ventilation</li>`;
-                    }
-
-                    content = `
-                        <div class="text-center flex flex-col h-full justify-between">
-                            <div>
-                                <p class="text-2xl font-semibold text-slate-600">CPR in Progress</p>
-                                <p id="cpr-cycle-timer-large" class="text-9xl font-mono font-bold text-green-500 my-8">${formatTime(cycleTimerValue)}</p>
-                                <p class="text-xl ${hasAdvancedAirway ? 'text-blue-600 font-bold' : 'text-slate-500'}">
-                                    ${cprText}
-                                </p>
-                                ${hasAdvancedAirway ? `<p class="text-sm text-slate-500 mt-2">${ventText}</p>` : ''}
+                            <div class="flex-grow flex flex-col justify-center">
+                                <p class="text-2xl font-black text-slate-400 uppercase tracking-widest">CPR IN PROGRESS</p>
+                                <p id="cpr-cycle-timer-large" class="text-[7rem] sm:text-[9rem] font-black text-blue-600 leading-none my-4 tracking-tighter tabular-nums">${formatTime(cycleTimerValue)}</p>
                                 
-                                <div class="mt-2 text-left bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                                    <div class="font-bold text-indigo-800 text-sm mb-1">Check Reversible Causes</div>
-                                    <div class="grid grid-cols-2 gap-2 text-xs text-indigo-700">
-                                        <div>
-                                            <span class="font-semibold block mb-0.5">4 Hs</span>
-                                            <ul class="list-disc list-inside leading-tight">
-                                                <li>Hypoxia</li>
-                                                <li>Hypovolaemia</li>
-                                                <li>Hyper/Hypokal.</li>
-                                                <li>Hypothermia</li>
-                                            </ul>
-                                        </div>
-                                        <div>
-                                             <span class="font-semibold block mb-0.5">4 Ts</span>
-                                             <ul class="list-disc list-inside leading-tight">
-                                                <li>Thrombosis</li>
-                                                <li>Tamponade</li>
-                                                <li>Toxins</li>
-                                                <li>Tension Pn.</li>
-                                            </ul>
-                                        </div>
-                                    </div>
+                                <div class="bg-white rounded-xl p-6 border-4 border-slate-200 shadow-sm">
+                                    <p class="text-2xl font-black text-black">${hasAdvancedAirway ? 'CONTINUOUS COMPRESSIONS' : (state.mode === 'NEO' ? 'RATIO 3:1' : (state.mode === 'PAEDS' ? 'RATIO 15:2' : 'RATIO 30:2'))}</p>
+                                    ${hasAdvancedAirway ? '<p class="font-bold text-slate-500 mt-2">Ventilate independently (10-12/min)</p>' : ''}
                                 </div>
+                            </div>
 
-                                ${considerations ? `
-                                <div class="mt-4 bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400 text-left">
-                                    <h4 class="font-bold text-slate-700 mb-1">Clinical Actions:</h4>
-                                    <ul class="list-disc list-inside text-sm space-y-1">
-                                        ${considerations}
-                                    </ul>
-                                </div>` : ''}
+                            <div class="grid grid-cols-2 gap-4 mt-6 mb-2"> 
+                                 <button onclick="handleManualCheck()" class="bg-yellow-400 hover:bg-yellow-500 text-black font-black py-6 rounded-2xl shadow-lg border-b-8 border-yellow-600 text-xl active:scale-95 active:border-b-0 translate-y-0 active:translate-y-2 transition-all">
+                                    PAUSE / CHECK
+                                 </button>
+                                 <button onclick="handleRosc()" class="bg-green-500 hover:bg-green-600 text-white font-black py-6 rounded-2xl shadow-lg border-b-8 border-green-700 text-xl active:scale-95 active:border-b-0 translate-y-0 active:translate-y-2 transition-all">
+                                    ROSC
+                                 </button>
                             </div>
                         </div>`;
-                    break;
+                     break;
+                     
                 case 'POST_ROSC':
-                    content = `
-                        <div class="text-center p-4 bg-green-50 rounded-lg h-full border border-green-200 overflow-y-auto">
-                            <h2 class="text-2xl font-bold text-green-600 flex items-center justify-center mb-4">
-                                <i data-lucide="check-circle" class="mr-2 w-8 h-8"></i>ROSC Achieved
-                            </h2>
-                            <div class="text-left space-y-3">
-                                <div class="bg-white p-3 rounded border border-green-100 mb-4 shadow-sm text-center">
-                                    <button onclick="openSummaryModal()" class="text-green-700 font-bold underline hover:text-green-800">View & Copy Resus Summary</button>
-                                </div>
-                                <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Immediate Post-Resuscitation Care (ABCDE)</h3>
-                                
-                                <div>
-                                    <p class="font-semibold text-slate-700">A - Airway</p>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
-                                        <li>Maintain patent airway.</li>
-                                        <li>Intubate if unconscious (avoid hyperventilation).</li>
+                     content = `
+                        <div class="p-6 bg-green-50 rounded-2xl border-4 border-green-200 h-full overflow-y-auto">
+                            <h2 class="text-4xl font-black text-green-700 text-center mb-6 tracking-tight">ROSC ACHIEVED</h2>
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-green-100 mb-6 text-center">
+                                <button onclick="openSummaryModal('ROSC')" class="text-lg font-bold text-green-800 underline">View Full Summary</button>
+                            </div>
+                            <div class="space-y-6">
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h3 class="font-black text-xl mb-2">ABCDE Assessment</h3>
+                                    <ul class="list-disc pl-5 space-y-1 font-medium text-slate-800">
+                                        <li><strong>Airway:</strong> Secure? Intubate?</li>
+                                        <li><strong>Breathing:</strong> SpO2 94-98%</li>
+                                        <li><strong>Circulation:</strong> 12-lead ECG, BP Support</li>
+                                        <li><strong>Disability:</strong> Glucose, Seizures</li>
+                                        <li><strong>Exposure:</strong> Temp Control (32-36°C)</li>
                                     </ul>
                                 </div>
-
-                                <div>
-                                    <p class="font-semibold text-slate-700">B - Breathing</p>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
-                                        <li>Aim SpO<sub>2</sub> 94-98%.</li>
-                                        <li>Aim normal PaCO<sub>2</sub> (4.5-6.0 kPa).</li>
-                                        <li>Protective lung ventilation strategy.</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <p class="font-semibold text-slate-700">C - Circulation</p>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
-                                        <li>12-lead ECG: Urgent PCI for STEMI?</li>
-                                        <li>Aim SBP > 100 mmHg (MAP > 65 mmHg).</li>
-                                        <li>Fluid bolus / Vasopressors (Noradrenaline).</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <p class="font-semibold text-slate-700">D - Disability</p>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
-                                        <li>Control Glucose (4-10 mmol/L).</li>
-                                        <li>Treat Seizures.</li>
-                                        <li>Sedation for shivering/agitation.</li>
-                                    </ul>
-                                </div>
-
-                                <div>
-                                    <p class="font-semibold text-slate-700">E - Exposure / Temperature</p>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 ml-2">
-                                        <li>Targeted Temperature Management.</li>
-                                        <li>Maintain temp &le; 37.5&deg;C (prevent fever).</li>
-                                    </ul>
-                                </div>
-
-                                <div class="mt-4 pt-4 border-t border-green-200">
-                                    <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
-                                        <i data-lucide="external-link" class="w-4 h-4 mr-2"></i> View Full 2025 RCUK Post-ROSC Guide
-                                    </a>
-                                </div>
+                                <button onclick="handleRearrest()" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl shadow-lg text-xl border-b-4 border-orange-700 active:scale-95">REARREST (Restart)</button>
+                                <button onclick="handleEndArrest()" class="w-full bg-slate-700 text-white font-bold py-4 rounded-xl shadow text-lg">END EPISODE</button>
                             </div>
                         </div>`;
-                    break;
+                     break;
             }
             guidanceContent.innerHTML = content;
             lucide.createIcons();
         };
 
-        const updateUI = () => {
-            timerDisplayNormal.classList.toggle('hidden', state.isRearrestActive);
-            timerDisplayRearrest.classList.toggle('hidden', !state.isRearrestActive);
-            
-            const isPostRosc = state.currentStep === 'POST_ROSC';
+        const renderInterventionButtons = () => {
+            let html = '';
+            const countBadge = (count) => count > 0 ? `<span class="absolute -top-2 -right-2 bg-red-600 text-white text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full border-2 border-white shadow-sm z-10">${count}</span>` : '';
+            const activeClass = "bg-green-100 border-green-500 text-green-900 ring-2 ring-green-500";
+            const inactiveClass = "bg-white border-slate-300 text-slate-500";
 
-            roscBtn.classList.toggle('hidden', !state.isArrestActive || isPostRosc);
-            rearrestBtn.classList.toggle('hidden', !isPostRosc);
-            manualCheckBtn.classList.toggle('hidden', !state.isCprInProgress);
-            
-            // Only show summary button if we have started an arrest or are in one
-            viewSummaryBtn.classList.toggle('hidden', !state.startTime);
-            
-            leftPanelCombinedContainer.classList.toggle('hidden', !state.isArrestActive);
+            // 1. Airway & Access (Grid)
+            html += `<div class="col-span-2 grid grid-cols-2 gap-3 mb-2">`;
+            html += `
+                <button onclick="toggleIntervention('sga')" class="p-4 rounded-xl text-sm font-black border-4 transition-all ${state.counts.sga > 0 ? activeClass : inactiveClass}">
+                    ${state.counts.sga > 0 ? 'SGA: ACTIVE' : 'SGA (iGel)'}
+                </button>
+                <button onclick="toggleIntervention('ett')" class="p-4 rounded-xl text-sm font-black border-4 transition-all ${state.counts.ett > 0 ? activeClass : inactiveClass}">
+                    ${state.counts.ett > 0 ? 'ETT: ACTIVE' : 'ETT (Tube)'}
+                </button>
+                <button onclick="addCount('access')" class="col-span-2 p-3 rounded-xl text-sm font-black border-4 bg-slate-50 border-slate-200 text-slate-600 active:bg-slate-200">
+                    IV / IO ACCESS SECURED ${state.counts.access > 0 ? '(Done)' : ''}
+                </button>
+            </div>`;
 
-            if (state.isArrestActive) {
-                endArrestBtn.classList.remove('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
-                endArrestBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'text-white');
-                endArrestBtn.disabled = false;
-            } else {
-                endArrestBtn.classList.add('bg-slate-400', 'text-slate-700', 'cursor-not-allowed');
-                endArrestBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white');
-                endArrestBtn.disabled = true;
-            }
-            
-            updatePatientInfoDisplay();
-            renderGuidance();
-            renderInterventionButtons();
-            renderLog();
-        };
-
-        // --- Event Handlers ---
-        window.updatePaedsCalc = (val, type) => {
-            if (type === 'age') {
-                const wf = calculateWetflag(val);
-                if (wf) {
-                    state.patientAge = val;
-                    state.patientWeight = wf.weight;
-                    state.wetflag = wf;
-                    document.getElementById('input-weight').value = wf.weight;
-                }
-            } else {
-                state.patientWeight = parseFloat(val);
-                state.wetflag = generateWetflagFromWeight(state.patientWeight);
-            }
-            
-            const resDiv = document.getElementById('wetflag-results');
-            if (state.wetflag) {
-                const wf = state.wetflag;
-                const tubeDepth = (wf.tube_uncuffed * 3).toFixed(1);
-                resDiv.classList.remove('hidden');
-                resDiv.innerHTML = `
-                    <div class="space-y-1">
-                        <div><strong>Weight:</strong> ${wf.weight}kg | <strong>Energy:</strong> ${wf.energy}J (4J/kg)</div>
-                        <div><strong>Adrenaline:</strong> ${wf.adrenaline_mcg}mcg (${wf.adrenaline_vol}ml of 1:10,000)</div>
-                        <div><strong>Amiodarone:</strong> ${wf.amiodarone}mg (5mg/kg) | <strong>Fluid:</strong> ${wf.fluids}ml (10ml/kg)</div>
-                        <div><strong>Glucose:</strong> ${wf.glucose}ml (2ml/kg of 10% dextrose)</div>
-                        <div><strong>ETT:</strong> Uncuffed ${wf.tube_uncuffed.toFixed(1)}mm @ ${tubeDepth}cm | Cuffed ${wf.tube_cuffed.toFixed(1)}mm</div>
-                    </div>
-                `;
-                renderInterventionButtons(); // Update buttons immediately
-                updatePatientInfoDisplay(); // Update display immediately
-            }
-        };
-
-        window.updateNeoWeight = (val) => {
-            state.patientWeight = parseFloat(val) || 3.5;
-            const w = state.patientWeight;
-            const adrVol = (w * 0.2).toFixed(2);
-            const adrMcg = Math.round(w * 20);
-            const fluid = Math.round(w * 10);
-            const glucose = Math.round(w * 2);
-            const tubeSize = w < 1 ? 2.5 : (w < 2 ? 3.0 : (w < 3 ? 3.5 : 3.5));
-            const tubeDepth = w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10));
-            
-            const resDiv = document.getElementById('neo-results');
-            if (resDiv) {
-                resDiv.classList.remove('hidden');
-                resDiv.innerHTML = `
-                    <div class="space-y-1">
-                        <div><strong>Weight:</strong> ${w}kg | <strong>Energy:</strong> ${Math.round(w * 4)}J (4J/kg)</div>
-                        <div><strong>Adrenaline:</strong> ${adrMcg}mcg (${adrVol}ml of 1:10,000) - 20mcg/kg</div>
-                        <div><strong>Fluid:</strong> ${fluid}ml (10ml/kg 0.9% NaCl) | <strong>Glucose:</strong> ${glucose}ml (2ml/kg 10%)</div>
-                        <div><strong>ETT:</strong> ${tubeSize}mm @ ${tubeDepth}cm (at lip)</div>
-                    </div>
+            // 2. Drugs (Large Buttons)
+            if (state.mode === 'ADULT') {
+                html += `
+                <button onclick="addCount('adrenaline')" class="h-32 relative bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-purple-800 active:border-b-0 active:translate-y-2 transition-all">
+                    <span class="text-2xl font-black">ADRENALINE</span>
+                    <span class="text-lg opacity-90 font-mono">1mg</span>
+                    ${countBadge(state.counts.adrenaline)}
+                </button>
+                <button onclick="addCount('amiodarone')" class="h-32 relative bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-orange-700 active:border-b-0 active:translate-y-2 transition-all">
+                    <span class="text-2xl font-black">AMIODARONE</span>
+                    <span class="text-lg opacity-90 font-mono">300mg</span>
+                    ${countBadge(state.counts.amiodarone)}
+                </button>
+                <button onclick="addCount('fluids')" class="h-24 col-span-2 relative bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex items-center justify-center border-b-8 border-blue-700 active:border-b-0 active:translate-y-2 transition-all mt-2">
+                    <span class="text-2xl font-black mr-2">FLUIDS</span>
+                    <span class="text-lg font-mono opacity-90">500ml</span>
+                    ${countBadge(state.counts.fluids)}
+                </button>`;
+            } else if (state.wetflag || state.mode === 'NEO') {
+                // Paeds/Neo Logic
+                const wf = state.wetflag || { 
+                    adrenaline_mcg: Math.round(state.patientWeight * 20), 
+                    adrenaline_vol: (state.patientWeight * 0.2).toFixed(2),
+                    amiodarone: Math.round(state.patientWeight * 5),
+                    fluids: Math.round(state.patientWeight * 10),
+                    glucose: Math.round(state.patientWeight * 2)
+                };
+                
+                html += `
+                <button onclick="addCount('adrenaline')" class="h-32 relative bg-purple-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-purple-800">
+                    <span class="text-xl font-black">ADRENALINE</span>
+                    <span class="text-lg font-mono">${wf.adrenaline_mcg}mcg</span>
+                    <span class="text-xs bg-purple-800 px-2 py-1 rounded">${wf.adrenaline_vol}ml (1:10k)</span>
+                    ${countBadge(state.counts.adrenaline)}
+                </button>
+                <button onclick="addCount('amiodarone')" class="h-32 relative bg-orange-500 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-orange-700">
+                    <span class="text-xl font-black">AMIODARONE</span>
+                    <span class="text-lg font-mono">${wf.amiodarone}mg</span>
+                    ${countBadge(state.counts.amiodarone)}
+                </button>
+                 <button onclick="addCount('fluids')" class="h-24 col-span-2 relative bg-blue-500 text-white font-bold rounded-2xl shadow-md active:scale-95 flex items-center justify-center border-b-8 border-blue-700 mt-2">
+                    <span class="text-2xl font-black mr-2">FLUIDS</span>
+                    <span class="text-lg font-mono opacity-90">${wf.fluids}ml</span>
+                    ${countBadge(state.counts.fluids)}
+                </button>
                 `;
             }
+
+            // Undo Button
+            html += `
+            <div class="col-span-2 mt-6 pt-2 border-t-2 border-slate-200">
+                <button onclick="undoLastAction()" class="w-full py-4 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 flex items-center justify-center active:scale-95">
+                    <i data-lucide="undo-2" class="w-5 h-5 mr-2"></i> UNDO LAST ACTION
+                </button>
+            </div>`;
+
+            interventionsButtonsGrid.innerHTML = html;
+            lucide.createIcons();
+        };
+
+        const populateReversible = () => {
+             const container = document.getElementById('causes-checklist');
+             if (!container) return;
+             reversibleCauses.forEach(c => { if (causesState[c.id] === undefined) causesState[c.id] = 0; });
+
+             container.innerHTML = reversibleCauses.map(item => {
+                const s = causesState[item.id];
+                let colorClass = "bg-white text-slate-400 border-slate-200 hover:bg-slate-50"; 
+                if (s === 1) colorClass = "bg-red-50 text-red-700 border-red-500 ring-2 ring-red-500 shadow-md"; 
+                if (s === 2) colorClass = "bg-green-50 text-green-700 border-green-500 ring-2 ring-green-500 shadow-md"; 
+
+                return `
+                <button onclick="toggleCause('${item.id}', '${item.name}')" class="${colorClass} border-4 rounded-xl py-4 px-2 font-bold text-sm transition-all active:scale-95 flex flex-col items-center justify-center h-32">
+                    <span class="text-xl leading-tight mb-2 text-center text-black font-black">${item.name}</span>
+                    <span class="text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded bg-white/50 border border-black/10">
+                        ${s === 0 ? 'CHECK' : (s === 1 ? 'SUSPECTED' : 'TREATED')}
+                    </span>
+                </button>`;
+             }).join('');
+        };
+
+        const renderLog = () => {
+             logList.innerHTML = state.log.map(entry => `
+                <div class="p-3 bg-white flex justify-between text-sm items-center">
+                    <span class="font-bold text-black text-md">${entry.message}</span>
+                    <span class="text-slate-500 font-mono text-xs bg-slate-100 px-2 py-1 rounded">${entry.time.toLocaleTimeString()}</span>
+                </div>
+            `).join('');
+        };
+
+        // --- ACTIONS ---
+
+        window.setProtocol = (mode) => {
+            state.mode = mode;
+            cycleDuration = (mode === 'NEO') ? 30 : 120;
+            cycleTimerValue = cycleDuration;
             
-            renderInterventionButtons();
-            updatePatientInfoDisplay(); // Update display immediately
-        };
-        
-        window.resetCycleTimer = () => {
-             startCycleTimer();
-             addLog('Cycle Timer Reset Manually');
-        };
-
-        const handleStartArrest = () => {
-            state = {
-                ...state, 
-                isArrestActive: true, 
-                currentStep: 'ASSESS_RHYTHM',
-                startTime: new Date(), 
-                endTime: null,
-                log: [], 
-                algorithmPath: null,
-                shocksDelivered: 0,
-                cycleCount: 0,
-                counts: {
-                    adrenaline: 0,
-                    amiodarone: 0,
-                    fluids: 0,
-                    glucose: 0,
-                    access: 0,
-                    sga: 0,
-                    ett: 0,
-                    shocks: 0
-                }
-            };
-            addLog(`${state.mode} Cardiac arrest started.`);
-            if (state.patientWeight) addLog(`Weight: ${state.patientWeight}kg`);
+            const badges = { 'ADULT': 'ADULT ALS', 'PAEDS': 'PAEDS PLS', 'NEO': 'NEO NLS' };
+            const colors = { 'ADULT': 'bg-blue-100 text-blue-800', 'PAEDS': 'bg-teal-100 text-teal-800', 'NEO': 'bg-pink-100 text-pink-800' };
             
-            startTotalTimer();
-            updateUI();
-        };
-        
-        const handlePreArrestedArrival = () => {
-            state.currentStep = 'PRE_ARREST_INFO';
-            updateUI();
+            protocolBadge.className = `text-[10px] font-black uppercase px-2 py-0.5 rounded ${colors[mode]}`;
+            protocolBadge.innerText = badges[mode];
+            
+            // Auto-start arrest on protocol selection? No, let user confirm details first, but here we just go to Start/Inputs
+            if(mode === 'ADULT') handleStartArrest(); // Adult goes straight in
+            else renderGuidance(); // Paeds/Neo needs inputs
         };
 
-        const handleContinueFromPreArrest = () => {
-            const cycles = parseInt(document.getElementById('pre-cycles').value) || 0;
-            const shocks = parseInt(document.getElementById('pre-shocks').value) || 0;
-            const adrenaline = parseInt(document.getElementById('pre-adrenaline').value) || 0;
-            const amiodarone = parseInt(document.getElementById('pre-amiodarone').value) || 0;
-
+        window.handleStartArrest = () => {
             state.isArrestActive = true;
             state.startTime = new Date();
-            startTotalTimer();
-
-            addLog(`${state.mode} Patient arrived in arrest.`);
-            if (cycles > 0) addLog(`[PRE-ARRIVAL] ${cycles} cycles completed.`);
-            if (shocks > 0) addLog(`[PRE-ARRIVAL] ${shocks} shocks delivered.`);
-            
-            if (adrenaline > 0) {
-                state.counts.adrenaline = adrenaline;
-                addLog(`[PRE-ARRIVAL] ${adrenaline} Adrenaline recorded.`);
-            }
-            if (amiodarone > 0) {
-                state.counts.amiodarone = amiodarone;
-                addLog(`[PRE-ARRIVAL] ${amiodarone} Amiodarone recorded.`);
-            }
-
-            state.cycleCount = cycles;
-            state.shocksDelivered = shocks;
-            state.counts.shocks = shocks;
-            
             state.currentStep = 'ASSESS_RHYTHM';
+            startTotalTimer();
             updateUI();
+            addLog(`${state.mode} Arrest Started`);
         };
 
-        const handleRhythmChoice = (isShockable) => {
-            if (isShockable) {
-                addLog(`Rhythm: SHOCKABLE.`);
-                state.currentStep = 'SHOCKABLE';
-                if (!state.algorithmPath) state.algorithmPath = 'SHOCKABLE';
-            } else {
-                addLog('Rhythm: NON-SHOCKABLE.');
-                if (!state.algorithmPath) state.algorithmPath = 'NON_SHOCKABLE';
-                handleStartCpr();
-            }
-            updateUI();
+        window.handleRhythmChoice = (isShockable) => {
+            state.currentStep = isShockable ? 'SHOCKABLE' : 'PERFORMING_CPR';
+            state.algorithmPath = isShockable ? 'SHOCKABLE' : 'NON_SHOCKABLE';
+            addLog(`Rhythm Check: ${isShockable ? 'SHOCKABLE' : 'NON-SHOCKABLE'}`);
+            if(!isShockable) handleStartCpr();
+            else updateUI();
         };
 
-        const handleDeliverShock = () => {
+        window.handleDeliverShock = () => {
             state.shocksDelivered++;
             state.counts.shocks++;
-            const energy = state.wetflag ? `(${state.wetflag.energy}J)` : '';
-            addLog(`Shock ${state.shocksDelivered} delivered ${energy}.`);
+            state.currentStep = 'PERFORMING_CPR';
+            addLog(`Shock ${state.shocksDelivered} Delivered`);
             handleStartCpr();
         };
 
-        const handleStartCpr = () => {
+        window.handleStartCpr = () => {
             state.isCprInProgress = true;
             state.cycleCount++;
-            state.currentStep = 'PERFORMING_CPR';
-            addLog(`Cycle ${state.cycleCount} started.`);
             startCycleTimer();
+            addLog(`CPR Cycle ${state.cycleCount} Started`);
             updateUI();
         };
-        
-        const handleRosc = () => {
-            const now = new Date();
-            state.roscTime = now;
-            state.endTime = now;
-            initialArrestTimeElem.textContent = formatTime(Math.floor((now - state.startTime) / 1000));
-            addLog(`ROSC achieved.`);
 
+        window.handleManualCheck = () => {
+            clearInterval(cycleTimerInterval);
+            state.isCprInProgress = false;
+            state.currentStep = 'ASSESS_RHYTHM';
+            addLog('Manual Pause / Rhythm Check');
+            updateUI();
+        };
+
+        window.handleRosc = () => {
             state.isCprInProgress = false;
             state.currentStep = 'POST_ROSC';
+            state.endTime = new Date();
             clearInterval(cycleTimerInterval);
             clearInterval(totalElapsedInterval);
-            
+            addLog('ROSC Achieved');
             openSummaryModal('ROSC');
             updateUI();
         };
         
-        const handleRearrest = () => {
-            addLog('Patient Rearrested.');
-            state.isRearrestActive = true;
-            state.rearrestTime = new Date();
+        window.handleRearrest = () => {
             state.currentStep = 'ASSESS_RHYTHM';
-            startTotalTimer();
-            updateUI();
-        };
-
-        const handleEndArrest = () => {
-     state.endTime = new Date();
-     addLog(`Arrest Concluded.`);
-     clearInterval(cycleTimerInterval);
-     clearInterval(totalElapsedInterval);
-     
-     // ADD THIS BLOCK
-     if (isMetronomeOn) {
-        metronomeBtn.click(); // Toggles it off via the existing event listener
-     }
-
-     openSummaryModal('ENDED');
-};
-
-        const handleManualCheck = () => {
-            if (!state.isCprInProgress) return;
-            clearInterval(cycleTimerInterval);
-            document.body.classList.remove('flash-active');
             state.isCprInProgress = false;
-            state.currentStep = 'ASSESS_RHYTHM';
-            addLog('Manual Rhythm Check: Compressions Paused.');
-            updateUI();
-        };
-
-        const resetApp = (clearLog = true) => {
-    // ADD THIS BLOCK AT THE START
-    if (isMetronomeOn) {
-        metronomeBtn.click();
-    }
-
-    clearInterval(totalElapsedInterval);
-            clearInterval(cycleTimerInterval);
-            document.body.classList.remove('flash-active');
-            state.isArrestActive = false;
-            state.isCprInProgress = false;
-            state.currentStep = 'START';
-            state.shocksDelivered = 0;
-            state.cycleCount = 0;
-            state.startTime = null;
             state.endTime = null;
-            state.patientWeight = 0;
-            state.patientAge = 0;
-            state.wetflag = null;
-            state.counts = { adrenaline: 0, amiodarone: 0, fluids: 0, glucose: 0, access: 0, sga: 0, ett: 0, shocks: 0 };
-            
-            if(clearLog) state.log = [];
-            totalElapsedTimeElem.innerText = "00:00";
-            cprCycleTimerSmall.innerText = "02:00";
-            document.getElementById('handover-notes').value = '';
-            
-            closeSummary();
+            startTotalTimer();
+            addLog('Patient Rearrested');
             updateUI();
         };
 
-        // --- Timers ---
+        window.handleEndArrest = () => {
+            state.endTime = new Date();
+            clearInterval(cycleTimerInterval);
+            clearInterval(totalElapsedInterval);
+            addLog('Arrest Ended');
+            openSummaryModal('ENDED');
+        };
+
+        // Intervention Logic
+        window.addCount = (key) => {
+            state.counts[key]++;
+            addLog(`${key.charAt(0).toUpperCase() + key.slice(1)} Given`);
+            if (key === 'adrenaline') state.lastAdrenalineTime = Date.now();
+            renderInterventionButtons();
+        };
+
+        window.toggleIntervention = (key) => {
+            if (state.counts[key] > 0) {
+                state.counts[key] = 0;
+                addLog(`${key.toUpperCase()} Removed`);
+            } else {
+                state.counts[key] = 1;
+                addLog(`${key.toUpperCase()} Inserted`);
+            }
+            if (state.currentStep === 'PERFORMING_CPR') renderGuidance(); // Update airway guidance text
+            renderInterventionButtons();
+        };
+        
+        window.toggleCause = (id, name) => {
+            causesState[id] = (causesState[id] + 1) % 3;
+            const status = ['Cleared', 'Suspected', 'Treated'][causesState[id]];
+            if(causesState[id] !== 0) addLog(`Cause ${status}: ${name}`);
+            populateReversible();
+        };
+
+        window.undoLastAction = () => {
+            if (state.log.length === 0) return;
+            const last = state.log[0];
+            const msg = last.message.toLowerCase();
+
+            // Simple heuristics for undoing counts
+            if (msg.includes('adrenaline given')) state.counts.adrenaline = Math.max(0, state.counts.adrenaline - 1);
+            else if (msg.includes('amiodarone given')) state.counts.amiodarone = Math.max(0, state.counts.amiodarone - 1);
+            else if (msg.includes('fluids given')) state.counts.fluids = Math.max(0, state.counts.fluids - 1);
+            else if (msg.includes('shock')) { state.counts.shocks--; state.shocksDelivered--; }
+            else if (msg.includes('cpr cycle')) { state.cycleCount--; }
+            
+            state.log.shift(); // Remove from log
+            addLog(`UNDO: ${last.message}`);
+            updateUI();
+        };
+
+        // --- TIMERS ---
         const startTotalTimer = () => {
             if (totalElapsedInterval) clearInterval(totalElapsedInterval);
             totalElapsedInterval = setInterval(() => {
-                if (state.isRearrestActive && state.rearrestTime) {
-                    const elapsed = Math.floor((new Date() - state.rearrestTime) / 1000);
-                    rearrestTimeElem.textContent = formatTime(elapsed);
-                } else if (state.startTime) {
-                    const elapsed = Math.floor((new Date() - state.startTime) / 1000);
-                    totalElapsedTimeElem.textContent = formatTime(elapsed);
-                }
+                const elapsed = Math.floor((new Date() - state.startTime) / 1000);
+                totalElapsedTimeElem.textContent = formatTime(elapsed);
             }, 1000);
         };
 
-        const startCycleTimer = () => {
+        window.startCycleTimer = () => { // Made global for reset button
             if (cycleTimerInterval) clearInterval(cycleTimerInterval);
             cycleTimerValue = cycleDuration;
             cprCycleTimerSmall.textContent = formatTime(cycleTimerValue);
-            document.body.classList.remove('flash-active');
-
+            
             cycleTimerInterval = setInterval(() => {
                 cycleTimerValue--;
                 const largeTimer = document.getElementById('cpr-cycle-timer-large');
-                
                 cprCycleTimerSmall.textContent = formatTime(cycleTimerValue);
                 if (largeTimer) largeTimer.textContent = formatTime(cycleTimerValue);
 
@@ -1142,10 +713,10 @@
                 if (cycleTimerValue <= 0) {
                     clearInterval(cycleTimerInterval);
                     document.body.classList.remove('flash-active');
-                    state.isCprInProgress = false;
                     state.currentStep = 'ASSESS_RHYTHM';
-                    addLog(`Cycle finished. Assess Rhythm.`);
-                    if (window.Tone && Tone.context.state === 'running') {
+                    state.isCprInProgress = false;
+                    addLog('Cycle Ended. Assess Rhythm.');
+                     if (window.Tone && Tone.context.state === 'running') {
                          const synth = new Tone.Synth().toDestination();
                          synth.triggerAttackRelease("E5", "8n");
                          setTimeout(()=> synth.triggerAttackRelease("A5", "8n"), 200);
@@ -1155,397 +726,113 @@
             }, 1000);
         };
         
-        // --- Summary Modal Logic ---
-        window.openSummaryModal = (outcome = 'ONGOING') => {
-             const duration = state.startTime && state.endTime 
-                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
-                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
-             
-             let outcomeColor = outcome === 'ROSC' ? 'text-green-600' : (outcome === 'ENDED' ? 'text-slate-600' : 'text-blue-600');
-             let outcomeTitle = outcome === 'ROSC' ? 'ROSC ACHIEVED' : (outcome === 'ENDED' ? 'RESUSCITATION ENDED' : 'CURRENT SUMMARY');
+        window.resetCycleTimer = () => { startCycleTimer(); addLog('Cycle Timer Reset'); };
 
-             let html = `
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <p class="text-xs text-slate-500 uppercase font-bold">Outcome</p>
-                        <p class="text-xl font-bold ${outcomeColor}">${outcomeTitle}</p>
-                     </div>
-                     <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                        <p class="text-xs text-slate-500 uppercase font-bold">Total Downtime</p>
-                        <p class="text-xl font-mono font-bold text-slate-800">${duration}</p>
-                     </div>
-                </div>
+        // --- PAEDS/NEO HELPERS ---
+        window.updatePaedsCalc = (val, type) => {
+            if (type === 'age') {
+                const wf = calculateWetflag(val);
+                if (wf) {
+                    state.wetflag = wf;
+                    state.patientWeight = wf.weight;
+                    patientInfoDisplay.innerHTML = `PAEDS: ${wf.weight}kg (${val}y) | ${wf.energy}J | Adr: ${wf.adrenaline_mcg}mcg | Tube: ${wf.tube_uncuffed}`;
+                    patientInfoDisplay.classList.remove('hidden');
+                    handleStartArrest();
+                }
+            }
+        };
 
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                    <div class="text-center">
-                        <p class="text-xs text-slate-500">Arrest Time</p>
-                        <p class="font-bold text-slate-800">${formatDateTime(state.startTime)}</p>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-xs text-slate-500">End/ROSC Time</p>
-                        <p class="font-bold text-slate-800">${formatDateTime(state.endTime) || '--:--'}</p>
-                    </div>
-                     <div class="text-center">
-                        <p class="text-xs text-slate-500">Total Cycles</p>
-                        <p class="font-bold text-slate-800">${state.cycleCount}</p>
-                    </div>
-                     <div class="text-center">
-                        <p class="text-xs text-slate-500">Total Shocks</p>
-                        <p class="font-bold text-slate-800">${state.counts.shocks}</p>
-                    </div>
-                </div>
+        window.updateNeoWeight = (val) => {
+            state.patientWeight = parseFloat(val);
+            patientInfoDisplay.innerHTML = `NEO: ${val}kg | Energy: ${Math.round(val*4)}J | Adr: ${Math.round(val*20)}mcg`;
+            patientInfoDisplay.classList.remove('hidden');
+            handleStartArrest();
+        };
 
-                <div class="border-t border-slate-200 pt-4 mb-4">
-                    <h3 class="font-bold text-slate-700 mb-3">Intervention Totals</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-                        <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>Adrenaline:</span> <span class="font-bold">${state.counts.adrenaline}</span>
-                        </div>
-                        <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>Amiodarone:</span> <span class="font-bold">${state.counts.amiodarone}</span>
-                        </div>
-                        <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>Fluids:</span> <span class="font-bold">${state.counts.fluids}</span>
-                        </div>
-                        <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>Airway (SGA):</span> <span class="font-bold">${state.counts.sga}</span>
-                        </div>
-                        <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>Airway (ETT):</span> <span class="font-bold">${state.counts.ett}</span>
-                        </div>
-                         <div class="flex justify-between bg-slate-50 p-2 rounded">
-                            <span>IV/IO Access:</span> <span class="font-bold">${state.counts.access}</span>
-                        </div>
-                    </div>
-                </div>
+        // --- UI UPDATER ---
+        const updateUI = () => {
+            renderGuidance();
+            renderInterventionButtons();
+            renderLog();
+            populateReversible();
+        };
+
+        // --- NAVIGATION ---
+        const tabs = {
+            'tab-guidance': ['guidance-content'],
+            'tab-drugs': ['drugs-content'],
+            'tab-causes': ['causes-content'],
+            'tab-log': ['log-content'],
+            'tab-more': ['special-circs-content']
+        };
+
+        document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
                 
-                ${state.wetflag ? `
-                 <div class="border-t border-slate-200 pt-4 mb-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Patient Info (Paediatric - WETFLAG)</h3>
-                    <div class="text-sm text-slate-600 space-y-1">
-                        <div><strong>Weight:</strong> ${state.patientWeight}kg | <strong>Age:</strong> ${state.patientAge} years</div>
-                        <div><strong>Energy:</strong> ${state.wetflag.energy}J | <strong>Adrenaline:</strong> ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)</div>
-                        <div><strong>Amiodarone:</strong> ${state.wetflag.amiodarone}mg | <strong>Fluid:</strong> ${state.wetflag.fluids}ml | <strong>Glucose:</strong> ${state.wetflag.glucose}ml</div>
-                        <div><strong>ETT:</strong> Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm</div>
-                    </div>
-                 </div>
-                ` : ''}
+                ['guidance-content', 'drugs-content', 'causes-content', 'log-content', 'special-circs-content'].forEach(id => {
+                    document.getElementById(id).classList.add('hidden');
+                });
                 
-                ${state.mode === 'NEO' && state.patientWeight ? `
-                 <div class="border-t border-slate-200 pt-4 mb-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Patient Info (Neonatal)</h3>
-                    <div class="text-sm text-slate-600 space-y-1">
-                        <div><strong>Weight:</strong> ${state.patientWeight}kg</div>
-                        <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k) | <strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml</div>
-                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
-                    </div>
-                 </div>
-                ` : ''}
-
-                <div class="border-t border-slate-200 pt-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
-                        ${state.log.map(l => `<div class="mb-1"><span class="text-slate-400">[${l.time.toLocaleTimeString()}]</span> ${l.message}</div>`).join('')}
-                    </div>
-                </div>
-             `;
-             
-             summaryContent.innerHTML = html;
-             summaryModal.classList.remove('hidden');
-        };
-        
-        window.closeSummary = () => {
-             summaryModal.classList.add('hidden');
-        };
-        
-        // MODIFIED: Combined Copy Function
-        window.copyFullRecord = () => {
-            // 1. Generate Log Text
-            let logText = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
-            state.log.forEach(l => {
-                logText += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
+                tabs[btn.id].forEach(id => document.getElementById(id).classList.remove('hidden'));
+                
+                // Force re-renders if needed
+                if(btn.id === 'tab-drugs') renderInterventionButtons();
+                if(btn.id === 'tab-causes') populateReversible();
             });
-
-            // 2. Generate Summary Text
-            const duration = state.startTime && state.endTime 
-                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
-                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
-            
-            let summaryText = `RESUSCITATION SUMMARY\n`;
-            summaryText += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
-            summaryText += `Total Duration: ${duration}\n`;
-            summaryText += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
-            summaryText += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
-            summaryText += `TOTALS:\n`;
-            summaryText += `- Adrenaline: ${state.counts.adrenaline}\n`;
-            summaryText += `- Amiodarone: ${state.counts.amiodarone}\n`;
-            summaryText += `- Fluids: ${state.counts.fluids}\n`;
-            summaryText += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
-            summaryText += `- Access: ${state.counts.access}\n`;
-            
-            if (state.wetflag) {
-                summaryText += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
-                summaryText += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
-                summaryText += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
-                summaryText += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
-                summaryText += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
-            }
-            if (state.mode === 'NEO' && state.patientWeight) {
-                const w = state.patientWeight;
-                summaryText += `\nPATIENT INFO (Neonatal):\n`;
-                summaryText += `Weight: ${w}kg\n`;
-                summaryText += `Adrenaline: ${Math.round(w * 20)}mcg (${(w * 0.2).toFixed(2)}ml 1:10k) | Fluid: ${Math.round(w * 10)}ml\n`;
-                summaryText += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
-            }
-            
-            // 3. Combine
-            const fullText = logText + "\n" + "=".repeat(20) + "\n\n" + summaryText;
-
-            // 4. Copy to Clipboard
-            navigator.clipboard.writeText(fullText).then(() => {
-                const btn = document.querySelector('button[onclick="copyFullRecord()"]');
-                const original = btn.innerHTML;
-                btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Copied!';
-                setTimeout(() => { 
-                    btn.innerHTML = original;
-                    lucide.createIcons();
-                }, 1500);
-            }).catch(err => {
-                alert("Clipboard access failed. Please select and copy the text manually.");
-            });
-        };
-        
-        // REMOVED: copySummaryOnly and copyLogOnly (replaced by copyFullRecord)
-
-        // --- Event Listeners ---
-        document.getElementById('guidance-content').addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-
-            switch (button.id) {
-                case 'start-arrest-btn': handleStartArrest(); break;
-                case 'pre-arrested-btn': handlePreArrestedArrival(); break;
-                case 'continue-from-pre-arrest-btn': handleContinueFromPreArrest(); break;
-                case 'shockable-btn': handleRhythmChoice(true); break;
-                case 'non-shockable-btn': handleRhythmChoice(false); break;
-                case 'deliver-shock-btn': handleDeliverShock(); break;
-            }
         });
 
-        // Add listeners for static buttons that were missing
-        document.getElementById('manual-check-btn').addEventListener('click', handleManualCheck);
-        document.getElementById('rosc-btn').addEventListener('click', handleRosc);
-        document.getElementById('rearrest-btn').addEventListener('click', handleRearrest);
-        document.getElementById('end-arrest-btn').addEventListener('click', handleEndArrest);
-
-        document.getElementById('interventions-buttons-grid').addEventListener('click', (e) => {
-             // Handle Decrement Click
-             if(e.target.classList.contains('decrement-btn')) {
-                 e.stopPropagation(); // Stop bubbling to the main button
-                 const button = e.target.closest('button');
-                 if(button) {
-                     let drugName = button.dataset.drug || button.dataset.intervention;
-                     if(drugName === 'airway_sga') drugName = 'sga'; // map back to state key
-                     if(drugName === 'airway_ett') drugName = 'ett'; // map back to state key
-                     
-                     if (state.counts[drugName] > 0) {
-                         state.counts[drugName]--;
-                         addLog(`Correction: ${button.innerText.split('\n')[0].trim()} count reduced`);
-                         
-                         // Check if this was an airway removal that affects guidance
-                         if ((drugName === 'sga' && state.counts.sga === 0) || (drugName === 'ett' && state.counts.ett === 0)) {
-                             if(state.currentStep === 'PERFORMING_CPR') renderGuidance();
-                         }
-                         renderInterventionButtons();
-                     }
-                 }
-                 return;
-             }
-
-             const button = e.target.closest('button');
-             if (!button || button.disabled) return;
-             
-             // Count Logic
-             if (button.dataset.drug) {
-                 const drug = button.dataset.drug;
-                 if (state.counts[drug] !== undefined) state.counts[drug]++;
-                 
-                 const text = button.querySelector('span') ? button.querySelector('span').innerText : button.innerText;
-                 addLog(`${text} Given`);
-             }
-             
-             if (button.dataset.intervention) {
-                 const intv = button.dataset.intervention;
-                 let needsGuidanceUpdate = false;
-                 
-                 // Handle split airway toggles
-                 if (intv === 'airway_sga') {
-                     // Toggle logic
-                     if (state.counts.sga > 0) {
-                         state.counts.sga = 0;
-                         addLog(`Airway (SGA) Removed/Inactive`);
-                     } else {
-                         state.counts.sga = 1;
-                         addLog(`Airway (SGA) Inserted`);
-                     }
-                     needsGuidanceUpdate = true;
-                 }
-                 else if (intv === 'airway_ett') {
-                      // Toggle logic
-                     if (state.counts.ett > 0) {
-                         state.counts.ett = 0;
-                         addLog(`Airway (ETT) Removed/Inactive`);
-                     } else {
-                         state.counts.ett = 1;
-                         addLog(`Airway (ETT) Inserted`);
-                     }
-                     needsGuidanceUpdate = true;
-                 }
-                 else if (intv === 'access') {
-                     state.counts.access++;
-                     addLog(`${button.innerText.split(' ')[0]} Access Recorded`);
-                 }
-                 
-                 if (needsGuidanceUpdate && state.currentStep === 'PERFORMING_CPR') {
-                     renderGuidance();
-                 }
-             }
-             
-             provideButtonFeedback(button);
-             renderInterventionButtons(); // Re-render to update badges
-        });
-        
-        document.getElementById('add-intervention-btn').addEventListener('click', () => {
-             const val = customInterventionInput.value;
-             if(val) {
-                 addLog(`Note: ${val}`);
-                 customInterventionInput.value = '';
-             }
-        });
-
-        document.getElementById('reset-app-btn').addEventListener('click', () => {
-            if(confirm('Reset Application?')) resetApp(true);
-        });
-
-        // Tab Switching Logic
-        const setMainActiveTab = (activeTab) => {
-            [guidanceTab, logTab, specialCircsTab].forEach(t => {
-                t.classList.remove('border-blue-500', 'text-blue-600');
-                t.classList.add('border-transparent', 'text-slate-500');
-            });
-            activeTab.classList.add('border-blue-500', 'text-blue-600');
-            activeTab.classList.remove('border-transparent', 'text-slate-500');
-
-            document.getElementById('log-content').classList.add('hidden');
-            document.getElementById('guidance-content').classList.add('hidden');
-            document.getElementById('special-circs-content').classList.add('hidden');
-            copyLogBtn.classList.add('hidden');
-            printLogBtn.classList.add('hidden');
-
-            if(activeTab === logTab) {
-                document.getElementById('log-content').classList.remove('hidden');
-                copyLogBtn.classList.remove('hidden');
-                printLogBtn.classList.remove('hidden');
-            } else if (activeTab === specialCircsTab) {
-                document.getElementById('special-circs-content').classList.remove('hidden');
-            } else {
-                document.getElementById('guidance-content').classList.remove('hidden');
-            }
-        };
-
-        guidanceTab.addEventListener('click', () => setMainActiveTab(guidanceTab));
-        logTab.addEventListener('click', () => setMainActiveTab(logTab));
-        specialCircsTab.addEventListener('click', () => setMainActiveTab(specialCircsTab));
-
-        const renderLog = () => {
-             logContent.innerHTML = state.log.map(entry => `
-                <div class="p-2 border-b border-slate-100 flex justify-between text-sm">
-                    <span class="font-bold text-slate-700">${entry.message}</span>
-                    <span class="text-slate-400 text-xs">${entry.time.toLocaleTimeString()}</span>
-                </div>
-            `).join('');
-        };
-        
-        copyLogBtn.addEventListener('click', () => {
-             const text = state.log.map(l => `[${l.time.toLocaleTimeString()}] ${l.message}`).join('\n');
-             navigator.clipboard.writeText(text).then(() => alert("Log Copied"));
-        });
-        
-        // Populate Reversible Causes
-        const populateReversible = () => {
-             const container = document.getElementById('causes-checklist');
-             let html = `
-                <div class="grid grid-cols-6 gap-2 text-[10px] uppercase font-bold text-slate-400 mb-2">
-                    <div class="col-span-4">Cause</div>
-                    <div class="text-center">Treated</div>
-                    <div class="text-center">Likely</div>
-                </div>
-             `;
-             html += reversibleCauses.map(item => `
-                <div class="grid grid-cols-6 gap-2 items-center text-sm py-1 border-b border-slate-50">
-                    <div class="col-span-4 font-medium text-slate-700">${item.name}</div>
-                    <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500" 
-                               onchange="addLog(this.checked ? 'Cause Treated: ${item.name}' : 'Cause Untreated: ${item.name}')">
-                    </div>
-                    <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500" 
-                               onchange="handleLikelyCause('${item.name}', this.checked)">
-                    </div>
-                </div>
-             `).join('');
-             container.innerHTML = html;
-        };
-        
-        window.handleLikelyCause = (name, isChecked) => {
-             addLog(isChecked ? `Likely Cause identified: ${name}` : `Likely Cause deselected: ${name}`);
-        };
-        
-        populateReversible();
-
-        // Populate Special Circs
-        specialCircsContent.innerHTML = `
-            <div class="prose prose-sm max-w-none text-slate-700">
-                <h3 class="font-bold text-lg mb-2">Special Circumstances (RCUK 2025)</h3>
-                <ul class="list-disc list-inside space-y-2">
-                    <li><strong>Hypothermia:</strong> < 30°C: Max 3 shocks, no drugs. 30-35°C: Double drug intervals.</li>
-                    <li><strong>Pregnancy:</strong> Manual uterine displacement (Left). Deliver < 4 mins if no ROSC.</li>
-                    <li><strong>Toxins:</strong> Consult Toxbase. Consider specific antidotes.</li>
-                    <li><strong>Anaphylaxis:</strong> Aggressive fluids. Early adrenaline.</li>
-                    <li><strong>Asthma:</strong> Low rate, high expiratory time. Check for tension pneumothorax.</li>
-                </ul>
-            </div>
-        `;
-
-        // Start metronome
-        metronomeBtn.addEventListener('click', async () => {
+        // --- METRONOME & INIT ---
+        document.getElementById('metronome-btn').addEventListener('click', async () => {
             if (Tone.context.state !== 'running') await Tone.start();
             if (isMetronomeOn) {
                 isMetronomeOn = false;
-                // UPDATED: Keeps the icon small and text short
-                metronomeBtn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro`;
-                metronomeBtn.classList.remove('bg-slate-300', 'text-slate-900'); // Optional: visuals
-                if(metronome) metronome.stop();
+                metronome.stop();
+                document.getElementById('metronome-btn').classList.remove('bg-yellow-300');
             } else {
                 isMetronomeOn = true;
-                // UPDATED: Keeps the icon small and text short
-                metronomeBtn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 mr-1"></i> On`; 
-                metronomeBtn.classList.add('bg-slate-300', 'text-slate-900'); // Optional: show active state
                 const synth = new Tone.Synth().toDestination();
                 metronome = new Tone.Loop(time => {
                     synth.triggerAttackRelease("C5", "32n", time);
                 }, "0.55").start(0); // ~110bpm
                 Tone.Transport.start();
+                document.getElementById('metronome-btn').classList.add('bg-yellow-300');
             }
-            lucide.createIcons();
         });
 
-        // Initial Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            updateUI();
-            lucide.createIcons();
+        document.getElementById('reset-app-btn').addEventListener('click', () => {
+            if(confirm('Reset Application?')) location.reload();
+        });
+        
+        document.getElementById('add-intervention-btn').addEventListener('click', () => {
+             const val = document.getElementById('custom-intervention-input').value;
+             if(val) { addLog(`Note: ${val}`); document.getElementById('custom-intervention-input').value = ''; }
         });
 
+        // Summary Modal Logic (Simplified)
+        window.openSummaryModal = (status) => { 
+            document.getElementById('summary-content').innerText = state.log.map(l => `[${l.time.toLocaleTimeString()}] ${l.message}`).join('\n');
+            document.getElementById('summary-modal').classList.remove('hidden'); 
+        };
+        window.closeSummary = () => document.getElementById('summary-modal').classList.add('hidden');
+        window.copyFullRecord = () => {
+             navigator.clipboard.writeText(document.getElementById('summary-content').innerText).then(() => alert('Copied to Clipboard'));
+        };
+        
+        // Special Circs Static Content
+        document.getElementById('special-circs-content').innerHTML = `
+            <h2 class="font-black text-2xl mb-4">SPECIAL CIRCUMSTANCES</h2>
+            <ul class="list-disc pl-5 space-y-2 font-bold text-slate-700">
+                <li><span class="text-black">Hypothermia:</span> &lt;30°C: Max 3 shocks, no drugs. 30-35°C: Double drug intervals.</li>
+                <li><span class="text-black">Pregnancy:</span> Left lateral tilt. Deliver fetus if no ROSC in 4 mins.</li>
+                <li><span class="text-black">Toxins:</span> Consult Toxbase immediately.</li>
+                <li><span class="text-black">Anaphylaxis:</span> Early adrenaline, aggressive fluids.</li>
+                <li><span class="text-black">Asthma:</span> Slow ventilation, watch for tension pneumo.</li>
+            </ul>`;
+
+        // Init
+        updateUI();
     </script>
 </body>
 </html>
