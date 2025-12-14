@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Resus Guide 2025 (Expert Mode)</title>
+    <title>Resus Guide 2025 (Refined)</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
@@ -17,50 +17,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
 
     <style>
-        /* --- STYLE & ACCESSIBILITY --- */
-        body { font-family: 'Inter', sans-serif; color: #000000; background-color: #f8fafc; overscroll-behavior: none; }
+        /* Base Settings */
+        body { font-family: 'Inter', sans-serif; color: #000; background-color: #f8fafc; }
         
         /* High Contrast Overrides */
         .text-slate-500, .text-slate-600, .text-slate-700, .text-slate-800 { color: #000 !important; }
         .text-slate-400 { color: #333 !important; }
 
         /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar { scrollbar-width: thin; scrollbar-color: #94a3b8 #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-
-        /* Animations */
+        
         @keyframes flash-bg {
             0% { background-color: #fee2e2; }
             50% { background-color: #ffcccc; }
             100% { background-color: #ffffff; }
         }
         .flash-active { animation: flash-bg 1s infinite; }
-
-        /* Bottom Nav Fixed */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #ffffff; border-top: 4px solid #1e293b;
-            display: flex; justify-content: space-around;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 50; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
-            height: 70px; /* Fixed height for calculations */
-        }
-        
-        .bottom-nav-item {
-            flex: 1; text-align: center;
-            color: #64748b; font-weight: 900; font-size: 0.7rem;
-            border: none; background: none; cursor: pointer;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: background-color 0.2s, color 0.2s;
-        }
-        
-        .bottom-nav-item.active { color: #2563eb; background-color: #eff6ff; border-top: 4px solid #2563eb; margin-top: -4px; }
-        .bottom-nav-item i { margin-bottom: 4px; width: 24px; height: 24px; }
-
-        /* Content Padding for Bottom Nav */
-        #app-container { padding-bottom: 70px; /* Match bottom nav height */ }
 
         /* Print styles */
         @media print {
@@ -71,128 +46,184 @@
         }
     </style>
 </head>
-<body class="flex flex-col min-h-screen overflow-hidden">
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
+    <!-- SUMMARY MODAL (Hidden) -->
     <div id="summary-modal" class="fixed inset-0 bg-slate-900 bg-opacity-90 z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col border-4 border-slate-800">
-            <div class="p-6 border-b-2 border-slate-200 flex justify-between items-center bg-slate-50">
-                <h2 class="text-2xl font-black text-black flex items-center">
-                    <i data-lucide="clipboard-list" class="mr-2"></i> RESUS SUMMARY
+            <div class="p-6 border-b-2 border-slate-200 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                <h2 class="text-2xl font-black text-slate-800 flex items-center">
+                    <i data-lucide="clipboard-list" class="mr-2"></i> Resuscitation Summary
                 </h2>
                 <button onclick="closeSummary()" class="text-slate-400 hover:text-black">
                     <i data-lucide="x" class="w-8 h-8"></i>
                 </button>
             </div>
             <div id="summary-content" class="p-6 space-y-4 font-mono text-sm"></div>
-            <div class="p-4 border-t-2 border-slate-200 bg-slate-50 flex gap-2 justify-end no-print">
-                <button onclick="copyFullRecord()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center text-lg shadow-lg">
-                    COPY RECORD
+            <div class="p-4 border-t-2 border-slate-200 bg-slate-50 rounded-b-xl flex flex-wrap gap-2 justify-end no-print">
+                <button onclick="copyFullRecord()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center shadow-lg">
+                    <i data-lucide="copy" class="w-4 h-4 mr-2"></i> Copy Full Record
                 </button>
-                <button onclick="closeSummary()" class="bg-slate-200 hover:bg-slate-300 text-black font-bold py-3 px-6 rounded-lg text-lg">CLOSE</button>
+                <button onclick="closeSummary()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-lg">
+                    Close
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="bg-white shadow-lg border-b-4 border-slate-800 z-40 shrink-0 relative">
-        <div class="flex items-center justify-between p-2 bg-slate-50 print:hidden">
-            <div class="flex items-center">
-                 <img src="https://iili.io/KGQOvkl.md.png" alt="Logo" class="h-8 mr-2">
-                 <div>
-                     <div class="font-black text-black text-sm leading-none tracking-tight">RESUS ASSIST</div>
-                     <div id="protocol-badge" class="text-[10px] font-black uppercase text-slate-500 bg-slate-200 px-1 rounded inline-block mt-1">SELECT MODE</div>
-                 </div>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button id="metronome-btn" class="bg-slate-200 hover:bg-slate-300 text-black font-bold py-2 px-3 rounded border border-slate-400 text-xs flex items-center shadow-sm">
-                    <i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> METRO
-                </button>
-                <button id="reset-app-btn" class="bg-red-100 hover:bg-red-200 text-red-700 font-bold py-2 px-3 rounded border border-red-200 text-xs shadow-sm">
-                    NEW
-                </button>
-            </div>
-        </div>
-
-        <div id="timer-container" class="grid grid-cols-2 divide-x-2 divide-slate-300 bg-white border-t border-slate-200">
-            <div class="p-2 text-center">
-                <p class="text-[10px] uppercase font-black text-slate-400 tracking-wider">TOTAL TIME</p>
-                <p id="total-elapsed-time" class="text-4xl font-black text-black font-mono leading-none tracking-tighter">00:00</p>
-            </div>
-            <div class="p-2 text-center relative bg-slate-50">
-                 <p class="text-[10px] uppercase font-black text-slate-400 tracking-wider">NEXT CHECK</p>
-                 <div class="flex items-center justify-center relative">
-                    <p id="cpr-cycle-timer-small" class="text-4xl font-black text-blue-600 font-mono leading-none tracking-tighter">02:00</p>
-                    <button onclick="resetCycleTimer()" class="absolute -right-1 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 p-2"><i data-lucide="rotate-ccw" class="w-5 h-5"></i></button>
-                 </div>
-            </div>
-        </div>
-        
-        <div id="patient-info-display" class="hidden bg-yellow-100 border-b-2 border-yellow-300 p-2 text-center text-xs font-bold text-black shadow-inner"></div>
+    <!-- PROTOCOL BANNER -->
+    <div class="bg-yellow-100 border-b-2 border-yellow-300 text-yellow-900 p-2 text-center text-xs font-black uppercase tracking-widest print:hidden">
+        RCUK 2025 Guidelines • Adult • Paediatric • Neonatal
     </div>
 
-    <div id="app-container" class="flex-grow overflow-hidden relative bg-slate-100 flex flex-col md:flex-row">
+    <!-- HEADER -->
+    <div class="flex items-center justify-between p-2 bg-white shadow-sm border-b border-slate-200 print:hidden sticky top-0 z-30">
+        <div class="w-1/3 flex justify-start pl-4">
+            <img src="https://iili.io/KGQOvkl.md.png" alt="Logo" class="h-10">
+        </div>
+        <div class="w-1/3 text-center flex flex-col items-center justify-center">
+             <span class="font-black text-slate-900 leading-tight text-lg">Resuscitation Assist</span>
+             <a id="guideline-link" href="#" target="_blank" class="text-xs text-blue-700 font-bold hover:underline flex items-center mt-1">
+                <i data-lucide="file-text" class="w-3 h-3 mr-1"></i> <span id="guideline-text">Guidelines 2025</span>
+             </a>
+        </div>
+        <div class="w-1/3 flex justify-end pr-4">
+             <button id="reset-app-btn" class="text-xs font-bold bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded border border-red-300 shadow-sm">
+                NEW PATIENT
+            </button>
+        </div> 
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="p-2 md:p-4 flex flex-col md:flex-row md:space-x-4 print:hidden flex-grow max-w-7xl mx-auto w-full">
         
-        <div id="main-panel" class="w-full h-full flex flex-col overflow-y-auto custom-scrollbar">
+        <!-- LEFT COLUMN: CONTROLS & TIMERS -->
+        <div class="w-full md:w-2/5 lg:w-1/3 flex flex-col space-y-4 mb-4 md:mb-0">
             
-            <div id="guidance-content" class="p-2 flex-grow flex flex-col max-w-2xl mx-auto w-full"></div>
+            <!-- Timers (Sticky) -->
+            <div id="timer-container" class="bg-white p-4 rounded-xl shadow-lg sticky top-0 z-20 border-b-4 border-slate-300">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="font-black text-lg text-slate-700 uppercase tracking-wide">Timers</h3>
+                    <div id="protocol-badge" class="px-2 py-1 rounded text-xs font-black uppercase bg-slate-200 text-slate-600">
+                        Select Mode
+                    </div>
+                </div>
+                
+                <div id="patient-info-display" class="hidden mb-3 p-2 rounded-lg text-xs font-bold border-2 text-center"></div>
+                
+                <div id="timer-display-normal" class="text-center">
+                    <div class="flex justify-between items-end">
+                        <div class="text-left">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase">Total Time</p>
+                            <p id="total-elapsed-time" class="text-4xl font-mono font-black text-slate-900 leading-none">00:00</p>
+                        </div>
+                        <div class="text-right">
+                             <p class="text-[10px] font-bold text-slate-500 uppercase">Next Rhythm Check</p>
+                             <div class="flex items-center justify-end space-x-2">
+                                <button onclick="resetCycleTimer()" class="text-xs bg-slate-100 p-2 rounded text-slate-500 hover:text-black border border-slate-200" title="Reset Cycle Timer"><i data-lucide="rotate-ccw" class="w-4 h-4 m-0"></i></button>
+                                <p id="cpr-cycle-timer-small" class="text-5xl font-mono font-black text-blue-600 leading-none">02:00</p>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Action Buttons -->
+            <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-slate-200">
+                 <h3 class="font-black text-lg mb-3 text-center text-slate-700 uppercase tracking-wide">Actions</h3>
+                 <div class="space-y-3">
+                    <button id="manual-check-btn" class="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-black py-4 px-2 rounded-xl shadow-md flex items-center justify-center border-b-4 border-yellow-600 active:border-b-0 active:translate-y-1 transition-all hidden">
+                        <i data-lucide="activity" class="mr-2"></i> PAUSE / CHECK
+                    </button>
+                    <button id="rosc-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-black py-4 px-2 rounded-xl shadow-md flex items-center justify-center border-b-4 border-green-700 active:border-b-0 active:translate-y-1 transition-all hidden">
+                        <i data-lucide="heart-pulse" class="mr-2"></i> ROSC ACHIEVED
+                    </button>
+                    <button id="rearrest-btn" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-4 px-2 rounded-xl shadow-md flex items-center justify-center border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all hidden">
+                        <i data-lucide="alert-circle" class="mr-2"></i> REARREST
+                    </button>
+                     <button id="end-arrest-btn" class="w-full font-bold py-3 px-2 rounded-lg shadow-sm flex items-center justify-center bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-400">
+                       <i data-lucide="square" class="mr-2"></i> End Arrest
+                    </button>
+                 </div>
+            </div>
             
-            <div id="drugs-content" class="hidden p-2 h-full bg-slate-100 overflow-y-auto max-w-2xl mx-auto w-full">
-                 <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-3 pb-4"></div>
+             <!-- Interventions & Notes Panel -->
+             <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden border-2 border-slate-200">
                  
-                 <div class="mt-4 flex space-x-2 p-2 bg-white rounded-xl shadow-sm border border-slate-200">
-                     <input type="text" id="custom-intervention-input" placeholder="Add custom note..." class="flex-grow p-3 bg-slate-50 border-2 border-slate-200 rounded-lg font-bold text-black focus:border-blue-500 outline-none">
-                     <button id="add-intervention-btn" class="bg-black text-white px-6 rounded-lg font-bold shadow-lg active:scale-95 transition-transform"><i data-lucide="plus"></i></button>
+                 <!-- Drugs/Interventions -->
+                 <div id="interventions-combined-container">
+                     <h3 class="font-black text-lg mb-3 text-center text-slate-700 uppercase tracking-wide">Drugs & Equipment</h3>
+                     <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-3"></div>
+                     
+                     <!-- UNDO Button -->
+                     <button onclick="undoLastAction()" class="w-full mt-4 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg border-2 border-slate-300 flex items-center justify-center active:scale-95 transition-transform">
+                        <i data-lucide="undo-2" class="w-4 h-4 mr-2"></i> Undo Last Action
+                     </button>
+
+                     <!-- Custom Note -->
+                     <div class="mt-4 pt-4 border-t border-slate-200">
+                         <div class="flex space-x-2">
+                             <input type="text" id="custom-intervention-input" placeholder="Custom note..." class="flex-grow bg-slate-50 border-2 border-slate-300 text-black font-bold text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5">
+                             <button id="add-intervention-btn" class="bg-black hover:bg-slate-800 text-white font-bold py-2 px-4 rounded-lg shadow-sm flex items-center justify-center">
+                                 <i data-lucide="plus" class="w-5 h-5 m-0"></i>
+                             </button>
+                         </div>
+                     </div>
+                 </div>
+
+                 <!-- Reversible Causes -->
+                 <div id="reversible-causes-container" class="mt-6 pt-4 border-t-2 border-slate-200">
+                     <h3 class="font-black text-lg mb-3 text-center text-slate-700 uppercase tracking-wide">4Hs & 4Ts</h3>
+                     <div id="causes-checklist" class="grid grid-cols-2 gap-2"></div>
+                     <p class="text-[10px] text-center mt-2 font-bold text-slate-500">Tap Once: SUSPECTED | Twice: TREATED</p>
                  </div>
             </div>
+        </div>
 
-            <div id="causes-content" class="hidden p-3 h-full bg-slate-100 overflow-y-auto max-w-2xl mx-auto w-full">
-                <h3 class="font-black text-xl mb-4 text-center text-slate-800 uppercase tracking-wide">Reversible Causes</h3>
-                <div id="causes-checklist" class="grid grid-cols-2 gap-3"></div>
-                <div class="mt-4 p-4 bg-white border-l-4 border-yellow-400 rounded-r-lg shadow-sm text-sm">
-                    <strong>Instructions:</strong><br>
-                    Tap once: <span class="text-red-600 font-bold">SUSPECTED (Red)</span><br>
-                    Tap twice: <span class="text-green-600 font-bold">TREATED (Green)</span>
-                </div>
+        <!-- RIGHT COLUMN: GUIDANCE & LOGS -->
+        <div class="w-full md:w-3/5 lg:w-2/3 bg-white p-2 sm:p-4 rounded-xl shadow-lg flex flex-col h-[calc(100vh-140px)] md:h-auto border-2 border-slate-200">
+            
+            <!-- Navigation Tabs (Big Buttons now) -->
+            <div class="mb-4 flex p-1 bg-slate-100 rounded-lg border border-slate-200">
+                <button id="guidance-tab" class="flex-1 py-3 px-2 rounded-md font-black text-sm uppercase transition-colors bg-white text-blue-700 shadow-sm border border-slate-200">
+                    Guidance
+                </button>
+                <button id="log-tab" class="flex-1 py-3 px-2 rounded-md font-bold text-sm uppercase text-slate-500 hover:bg-white/50 transition-colors">
+                    Event Log
+                </button>
+                <button id="special-circs-tab" class="flex-1 py-3 px-2 rounded-md font-bold text-sm uppercase text-slate-500 hover:bg-white/50 transition-colors">
+                    Specials
+                </button>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="flex items-center justify-end mb-4 space-x-2">
+                <button id="metronome-btn" class="bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold py-2 px-3 rounded-lg border border-slate-300 flex items-center">
+                    <i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro
+                </button>
+                <button id="view-summary-btn" onclick="openSummaryModal()" class="hidden bg-slate-200 hover:bg-slate-300 text-black text-xs font-bold py-2 px-3 rounded-lg border border-slate-300">
+                    Summary
+                </button>
             </div>
             
-            <div id="log-content" class="hidden p-0 h-full bg-white w-full">
-                <div class="sticky top-0 bg-slate-50 border-b border-slate-200 p-2 flex justify-between items-center z-10">
-                    <span class="font-bold text-sm text-slate-500 uppercase">Event Log</span>
-                    <button onclick="copyFullRecord()" class="text-blue-600 font-bold text-xs bg-blue-50 px-2 py-1 rounded">COPY ALL</button>
-                </div>
-                <div id="log-list" class="divide-y divide-slate-100"></div>
+            <!-- Content Area -->
+            <div id="content-area" class="flex-grow overflow-y-auto pr-2 pl-2 custom-scrollbar relative">
+                <div id="guidance-content" class="h-full flex flex-col"></div>
+                <div id="log-content" class="hidden h-full"></div>
+                <div id="special-circs-content" class="hidden h-full prose prose-sm max-w-none"></div>
             </div>
-
-            <div id="special-circs-content" class="hidden p-4 h-full bg-white overflow-y-auto w-full prose prose-sm max-w-none"></div>
         </div>
-    </div>
 
-    <div class="bottom-nav no-print">
-        <button class="bottom-nav-item active" id="tab-guidance">
-            <i data-lucide="activity"></i>
-            <span>GUIDE</span>
-        </button>
-        <button class="bottom-nav-item" id="tab-drugs">
-            <i data-lucide="syringe"></i>
-            <span>DRUGS</span>
-        </button>
-        <button class="bottom-nav-item" id="tab-causes">
-            <i data-lucide="stethoscope"></i>
-            <span>4H 4T</span>
-        </button>
-        <button class="bottom-nav-item" id="tab-log">
-            <i data-lucide="clipboard-list"></i>
-            <span>LOG</span>
-        </button>
-        <button class="bottom-nav-item" id="tab-more">
-            <i data-lucide="menu"></i>
-            <span>MORE</span>
-        </button>
     </div>
+    
+    <footer class="mt-4 mb-4 text-center text-[10px] font-bold text-slate-400 no-print uppercase">
+        &copy; WMEBEM 2025. Made by Dr Jake Turner.
+    </footer>
 
     <script>
         // --- Application State ---
         let state = {
-            mode: 'ADULT', // 'ADULT', 'PAEDS', 'NEO'
+            mode: 'ADULT',
             isArrestActive: false,
             isCprInProgress: false,
             currentStep: 'START', 
@@ -223,23 +254,42 @@
         let totalElapsedInterval = null;
         let cycleTimerInterval = null;
         let cycleTimerValue = 120;
-        let cycleDuration = 120;
+        let cycleDuration = 120; // Default 2 mins
         let metronome = null;
         let isMetronomeOn = false;
 
         // --- DOM Elements ---
         const totalElapsedTimeElem = document.getElementById('total-elapsed-time');
+        const timerDisplayNormal = document.getElementById('timer-display-normal');
         const cprCycleTimerSmall = document.getElementById('cpr-cycle-timer-small');
+        const timerContainer = document.getElementById('timer-container');
         const patientInfoDisplay = document.getElementById('patient-info-display');
-        const protocolBadge = document.getElementById('protocol-badge');
+
+        const roscBtn = document.getElementById('rosc-btn');
+        const rearrestBtn = document.getElementById('rearrest-btn');
+        const metronomeBtn = document.getElementById('metronome-btn');
+        const endArrestBtn = document.getElementById('end-arrest-btn');
+        const manualCheckBtn = document.getElementById('manual-check-btn');
+        
+        const guidanceTab = document.getElementById('guidance-tab');
+        const logTab = document.getElementById('log-tab');
+        const specialCircsTab = document.getElementById('special-circs-tab');
         const guidanceContent = document.getElementById('guidance-content');
+        const logContent = document.getElementById('log-content');
+        const specialCircsContent = document.getElementById('special-circs-content');
+        const protocolBadge = document.getElementById('protocol-badge');
+        
+        const leftPanelCombinedContainer = document.getElementById('left-panel-combined'); 
+        const customInterventionInput = document.getElementById('custom-intervention-input');
         const interventionsButtonsGrid = document.getElementById('interventions-buttons-grid');
-        const logList = document.getElementById('log-list');
+        const causesChecklist = document.getElementById('causes-checklist');
+        const viewSummaryBtn = document.getElementById('view-summary-btn');
 
         // --- WETFLAG Logic ---
         const calculateWetflag = (age) => {
-            const a = parseFloat(age); if (isNaN(a)) return null;
-            let weight = (a < 1) ? (0.5 * a * 12) + 4 : ((a <= 10) ? (a + 4) * 2 : (a * 3) + 7);
+            const a = parseFloat(age);
+            if (isNaN(a)) return null;
+            let weight = (a < 1) ? (0.5 * a * 12) + 4 : (a <= 10 ? (a + 4) * 2 : (a * 3) + 7);
             return generateWetflagFromWeight(weight, a);
         };
 
@@ -248,7 +298,7 @@
                 weight: weight.toFixed(1),
                 energy: Math.round(weight * 4),
                 fluids: Math.round(weight * 10),
-                adrenaline_vol: (weight * 0.1).toFixed(2),
+                adrenaline_vol: (weight * 0.1).toFixed(2), 
                 adrenaline_mcg: Math.round(weight * 10),
                 amiodarone: Math.round(weight * 5),
                 glucose: Math.round(weight * 2),
@@ -257,7 +307,7 @@
             };
         }
 
-        // --- Helpers ---
+        // --- Helper Functions ---
         const formatTime = (seconds) => {
             if (isNaN(seconds) || seconds < 0) return "00:00";
             const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -265,15 +315,83 @@
             return `${mins}:${secs}`;
         };
         
-        const formatDateTime = (date) => date ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "--:--";
-
         const addLog = (message) => {
             const elapsed = state.startTime ? Math.floor((new Date() - state.startTime) / 1000) : 0;
             state.log.unshift({ time: new Date(), elapsed: elapsed, message: message });
             renderLog();
         };
 
-        // --- CORE RENDER FUNCTIONS ---
+        // --- Render Functions ---
+        
+        const renderInterventionButtons = () => {
+            let html = '';
+            const countBadge = (count) => count > 0 ? `<span class="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-white shadow-sm z-10">${count}</span>` : '';
+            const activeClass = "bg-green-100 border-green-500 text-green-900 ring-2 ring-green-500";
+            const inactiveClass = "bg-white border-slate-300 text-slate-500";
+
+            // 1. Airway & Access (Grid)
+            html += `
+                <button onclick="toggleIntervention('sga')" class="p-3 rounded-lg text-xs font-black border-2 transition-all ${state.counts.sga > 0 ? activeClass : inactiveClass}">
+                    ${state.counts.sga > 0 ? 'SGA: ACTIVE' : 'SGA (iGel)'}
+                </button>
+                <button onclick="toggleIntervention('ett')" class="p-3 rounded-lg text-xs font-black border-2 transition-all ${state.counts.ett > 0 ? activeClass : inactiveClass}">
+                    ${state.counts.ett > 0 ? 'ETT: ACTIVE' : 'ETT (Tube)'}
+                </button>
+                <button onclick="addCount('access')" class="col-span-2 p-2 rounded-lg text-xs font-black border-2 bg-slate-50 border-slate-200 text-slate-600 active:bg-slate-200">
+                    IV / IO ACCESS SECURED ${state.counts.access > 0 ? '(Done)' : ''}
+                </button>
+            `;
+
+            // 2. Drugs (Large Buttons)
+            if (state.mode === 'ADULT') {
+                html += `
+                <button onclick="addCount('adrenaline')" class="h-24 relative bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-4 border-purple-800 active:border-b-0 active:translate-y-1 transition-all">
+                    <span class="text-xl font-black">ADRENALINE</span>
+                    <span class="text-sm opacity-90 font-mono">1mg</span>
+                    ${countBadge(state.counts.adrenaline)}
+                </button>
+                <button onclick="addCount('amiodarone')" class="h-24 relative bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-4 border-orange-700 active:border-b-0 active:translate-y-1 transition-all">
+                    <span class="text-xl font-black">AMIODARONE</span>
+                    <span class="text-sm opacity-90 font-mono">300mg</span>
+                    ${countBadge(state.counts.amiodarone)}
+                </button>
+                <button onclick="addCount('fluids')" class="h-16 col-span-2 relative bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-xl shadow-md active:scale-95 flex items-center justify-center border-b-4 border-blue-700 active:border-b-0 active:translate-y-1 transition-all mt-1">
+                    <span class="text-lg font-black mr-2">FLUIDS</span>
+                    <span class="text-sm font-mono opacity-90">500ml</span>
+                    ${countBadge(state.counts.fluids)}
+                </button>`;
+            } else if (state.wetflag || state.mode === 'NEO') {
+                const wf = state.wetflag || { 
+                    adrenaline_mcg: Math.round(state.patientWeight * 20), 
+                    adrenaline_vol: (state.patientWeight * 0.2).toFixed(2),
+                    amiodarone: Math.round(state.patientWeight * 5),
+                    fluids: Math.round(state.patientWeight * 10),
+                    glucose: Math.round(state.patientWeight * 2)
+                };
+                
+                html += `
+                <button onclick="addCount('adrenaline')" class="h-24 relative bg-purple-600 text-white font-bold rounded-xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-4 border-purple-800">
+                    <span class="text-lg font-black">ADR</span>
+                    <span class="text-md font-mono">${wf.adrenaline_mcg}mcg</span>
+                    <span class="text-[10px] bg-purple-800 px-1 rounded">${wf.adrenaline_vol}ml</span>
+                    ${countBadge(state.counts.adrenaline)}
+                </button>
+                <button onclick="addCount('amiodarone')" class="h-24 relative bg-orange-500 text-white font-bold rounded-xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-4 border-orange-700">
+                    <span class="text-lg font-black">AMIO</span>
+                    <span class="text-md font-mono">${wf.amiodarone}mg</span>
+                    ${countBadge(state.counts.amiodarone)}
+                </button>
+                 <button onclick="addCount('fluids')" class="h-16 col-span-2 relative bg-blue-500 text-white font-bold rounded-xl shadow-md active:scale-95 flex items-center justify-center border-b-4 border-blue-700 mt-1">
+                    <span class="text-lg font-black mr-2">FLUIDS</span>
+                    <span class="text-sm font-mono opacity-90">${wf.fluids}ml</span>
+                    ${countBadge(state.counts.fluids)}
+                </button>
+                `;
+            } else {
+                 html += `<div class="col-span-2 text-center text-sm text-slate-400 italic p-2">Select protocol to see drugs</div>`;
+            }
+            interventionsButtonsGrid.innerHTML = html;
+        };
 
         const renderGuidance = () => {
             let content = '';
@@ -282,29 +400,26 @@
             // --- ANTICIPATORY GUIDANCE LOGIC ---
             let actionBanner = '';
             
-            // Adult ALS Anticipation
             if (state.mode === 'ADULT' && state.currentStep === 'PERFORMING_CPR') {
-                // Prepare Drugs (Cycle BEFORE they are due)
                 if (state.shocksDelivered === 2) {
                      actionBanner = `
-                     <div class="bg-yellow-100 border-l-8 border-yellow-500 p-4 mb-4 animate-pulse shadow-md rounded-r">
+                     <div class="bg-yellow-100 border-l-8 border-yellow-500 p-4 mb-4 animate-pulse shadow rounded-r">
                         <p class="font-black text-yellow-800 text-xs uppercase tracking-widest">ANTICIPATION</p>
-                        <p class="text-xl font-black text-black">PREPARE ADRENALINE & AMIODARONE</p>
-                        <p class="text-sm font-bold text-slate-800 mt-1">Give after next shock</p>
+                        <p class="text-2xl font-black text-black">PREPARE ADRENALINE & AMIODARONE</p>
+                        <p class="text-sm font-bold text-slate-800">Give after next shock</p>
                      </div>`;
                 }
-                // Give Drugs (Cycle WHEN they are due)
                 else if (state.shocksDelivered === 3 && state.counts.adrenaline === 0) {
                      actionBanner = `
-                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow-md rounded-r">
+                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow rounded-r">
                         <p class="font-black text-purple-800 text-xs uppercase tracking-widest">ACTION REQUIRED</p>
-                        <p class="text-2xl font-black text-purple-900">GIVE ADRENALINE (1mg) NOW</p>
-                        <p class="text-2xl font-black text-orange-800 mt-2">GIVE AMIODARONE (300mg) NOW</p>
+                        <p class="text-2xl font-black text-purple-900 leading-none">GIVE ADRENALINE (1mg)</p>
+                        <p class="text-2xl font-black text-orange-800 leading-none mt-1">GIVE AMIODARONE (300mg)</p>
                      </div>`;
                 }
                 else if (state.shocksDelivered >= 5 && state.cycleCount % 2 !== 0 && (Date.now() - state.lastAdrenalineTime > 180000)) { 
                      actionBanner = `
-                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow-md rounded-r">
+                     <div class="bg-purple-100 border-l-8 border-purple-600 p-4 mb-4 shadow rounded-r">
                         <p class="font-black text-purple-800 text-xs uppercase tracking-widest">ACTION REQUIRED</p>
                         <p class="text-2xl font-black text-purple-900">GIVE ADRENALINE (1mg)</p>
                      </div>`;
@@ -314,56 +429,53 @@
             switch (state.currentStep) {
                 case 'START':
                     content = `
-                        <div class="flex flex-col h-full pt-4">
-                            <h2 class="text-3xl font-black text-center mb-6 tracking-tight">SELECT PROTOCOL</h2>
-                            <div class="space-y-4 px-2">
-                                <button onclick="setProtocol('ADULT')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-blue-600 bg-white text-blue-900 hover:bg-blue-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-blue-100 opacity-20"></div>
+                        <div class="text-center h-full flex flex-col justify-start pt-4">
+                            <h2 class="text-3xl font-black text-slate-800 mb-8">SELECT PROTOCOL</h2>
+                            <div class="space-y-4 px-4 max-w-lg mx-auto w-full">
+                                <button onclick="setProtocol('ADULT')" class="w-full py-6 rounded-2xl font-black text-2xl shadow-lg border-4 border-blue-600 bg-white text-blue-900 hover:bg-blue-50 transition-transform active:scale-95">
                                     ADULT ALS
                                 </button>
-                                <button onclick="setProtocol('PAEDS')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-teal-600 bg-white text-teal-900 hover:bg-teal-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-teal-100 opacity-20"></div>
+                                <button onclick="setProtocol('PAEDS')" class="w-full py-6 rounded-2xl font-black text-2xl shadow-lg border-4 border-teal-600 bg-white text-teal-900 hover:bg-teal-50 transition-transform active:scale-95">
                                     PAEDIATRIC PLS
                                 </button>
-                                <button onclick="setProtocol('NEO')" class="w-full py-8 rounded-2xl font-black text-2xl shadow-xl border-4 border-pink-600 bg-white text-pink-900 hover:bg-pink-50 transition-transform active:scale-95 flex items-center justify-center relative overflow-hidden">
-                                    <div class="absolute inset-0 bg-pink-100 opacity-20"></div>
+                                <button onclick="setProtocol('NEO')" class="w-full py-6 rounded-2xl font-black text-2xl shadow-lg border-4 border-pink-600 bg-white text-pink-900 hover:bg-pink-50 transition-transform active:scale-95">
                                     NEONATAL NLS
                                 </button>
                             </div>
                             
                             ${state.mode === 'PAEDS' ? `
-                            <div class="mt-6 bg-teal-50 p-4 rounded-xl border-2 border-teal-200">
+                            <div class="mt-8 bg-teal-50 p-4 rounded-xl border-2 border-teal-200 text-left max-w-lg mx-auto w-full">
                                 <h3 class="font-bold text-teal-900 mb-2">WETFLAG Calculator</h3>
                                 <div class="flex space-x-2">
-                                    <input type="number" id="input-age" placeholder="Age" class="p-3 border-2 border-teal-300 rounded-lg w-1/3 font-bold text-lg text-center">
-                                    <button onclick="updatePaedsCalc(document.getElementById('input-age').value, 'age')" class="bg-teal-600 text-white font-bold py-3 px-4 rounded-lg flex-grow shadow-md">Calculate</button>
+                                    <input type="number" id="input-age" placeholder="Age" class="p-3 border-2 border-teal-300 rounded-lg w-1/3 font-bold text-center">
+                                    <button onclick="updatePaedsCalc(document.getElementById('input-age').value, 'age')" class="bg-teal-600 text-white font-bold py-3 px-4 rounded-lg flex-grow shadow-md">Start Arrest</button>
                                 </div>
                             </div>` : ''}
 
                             ${state.mode === 'NEO' ? `
-                             <div class="mt-6 bg-pink-50 p-4 rounded-xl border-2 border-pink-200">
+                             <div class="mt-8 bg-pink-50 p-4 rounded-xl border-2 border-pink-200 text-left max-w-lg mx-auto w-full">
                                 <h3 class="font-bold text-pink-900 mb-2">Neonatal Weight</h3>
-                                <input type="number" placeholder="Weight (kg)" step="0.1" class="p-3 border-2 border-pink-300 rounded-lg w-full font-bold text-lg text-center" onchange="updateNeoWeight(this.value)">
+                                <input type="number" placeholder="Weight (kg)" step="0.1" class="p-3 border-2 border-pink-300 rounded-lg w-full font-bold text-center" onchange="updateNeoWeight(this.value)">
                             </div>` : ''}
                         </div>`;
                     break;
 
                 case 'ASSESS_RHYTHM':
                      content = `
-                        <div class="flex flex-col h-full justify-center px-2">
+                        <div class="flex flex-col h-full justify-start px-4 pt-6">
                             <div class="text-center mb-8">
                                 <div class="inline-block bg-yellow-100 text-yellow-800 px-4 py-1 rounded-full font-bold text-sm mb-4 border border-yellow-300 animate-pulse">CHECK PATIENT</div>
-                                <h2 class="text-4xl font-black text-black tracking-tight">ASSESS RHYTHM</h2>
-                                <p class="text-lg font-bold text-slate-500 mt-2">Is it Shockable?</p>
+                                <h2 class="text-4xl font-black text-black">ASSESS RHYTHM</h2>
+                                <p class="text-xl font-bold text-slate-500 mt-2">Is it Shockable?</p>
                             </div>
-                            <div class="grid grid-cols-1 gap-6">
-                                <button onclick="handleRhythmChoice(true)" class="bg-red-600 text-white font-black text-3xl py-10 rounded-2xl shadow-xl hover:bg-red-700 active:scale-95 border-b-8 border-red-800 flex flex-col items-center">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <button onclick="handleRhythmChoice(true)" class="bg-red-600 text-white font-black text-3xl py-12 rounded-2xl shadow-xl hover:bg-red-700 active:scale-95 border-b-8 border-red-800 flex flex-col items-center justify-center">
                                     SHOCKABLE
-                                    <span class="text-lg font-bold text-red-100 mt-1 opacity-90">VF / pVT</span>
+                                    <span class="text-lg font-bold text-red-100 opacity-90">VF / pVT</span>
                                 </button>
-                                <button onclick="handleRhythmChoice(false)" class="bg-blue-600 text-white font-black text-3xl py-10 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 border-b-8 border-blue-800 flex flex-col items-center">
+                                <button onclick="handleRhythmChoice(false)" class="bg-blue-600 text-white font-black text-3xl py-12 rounded-2xl shadow-xl hover:bg-blue-700 active:scale-95 border-b-8 border-blue-800 flex flex-col items-center justify-center">
                                     NON-SHOCKABLE
-                                    <span class="text-lg font-bold text-blue-100 mt-1 opacity-90">PEA / Asystole</span>
+                                    <span class="text-lg font-bold text-blue-100 opacity-90">PEA / Asystole</span>
                                 </button>
                             </div>
                         </div>`;
@@ -371,15 +483,15 @@
 
                 case 'SHOCKABLE':
                      content = `
-                        <div class="flex flex-col h-full justify-center px-4 bg-red-50 -mx-2 rounded-xl border-4 border-red-100">
-                            <div class="text-center mb-6">
+                        <div class="flex flex-col h-full justify-start px-4 pt-6 bg-red-50 rounded-xl border-4 border-red-100">
+                            <div class="text-center mb-8">
                                 <h2 class="text-4xl font-black text-red-600 mb-4 tracking-tighter">SHOCKABLE</h2>
-                                <div class="text-3xl font-black bg-white inline-block px-8 py-3 rounded-xl shadow-lg border-2 border-red-200">
+                                <div class="text-3xl font-black bg-white inline-block px-8 py-4 rounded-xl shadow-lg border-2 border-red-200">
                                     Energy: ${state.wetflag ? state.wetflag.energy + 'J' : (state.mode === 'ADULT' ? '150-200 J' : '4 J/kg')}
                                 </div>
                             </div>
-                            <button onclick="handleDeliverShock()" class="w-full bg-red-600 text-white font-black text-4xl py-12 rounded-3xl shadow-2xl animate-pulse border-4 border-white ring-4 ring-red-300 active:bg-red-700 active:scale-95 transition-transform">
-                                <i data-lucide="zap" class="inline w-10 h-10 mr-2 -mt-2"></i> SHOCK ${state.shocksDelivered + 1}
+                            <button onclick="handleDeliverShock()" class="w-full bg-red-600 text-white font-black text-4xl py-16 rounded-3xl shadow-2xl animate-pulse border-4 border-white ring-4 ring-red-300 active:bg-red-700 active:scale-95 transition-transform">
+                                <i data-lucide="zap" class="inline w-12 h-12 mr-2 -mt-2"></i> DELIVER SHOCK ${state.shocksDelivered + 1}
                             </button>
                             <p class="text-center font-black text-red-800 mt-8 text-xl uppercase tracking-widest">Ensure Everyone Clear</p>
                         </div>`;
@@ -387,26 +499,16 @@
 
                 case 'PERFORMING_CPR':
                      content = `
-                        <div class="flex flex-col h-full text-center px-1">
+                        <div class="flex flex-col h-full text-center px-2 justify-start pt-4">
+                            <!-- Action Banner -->
                             ${actionBanner}
 
-                            <div class="flex-grow flex flex-col justify-center">
-                                <p class="text-2xl font-black text-slate-400 uppercase tracking-widest">CPR IN PROGRESS</p>
-                                <p id="cpr-cycle-timer-large" class="text-[7rem] sm:text-[9rem] font-black text-blue-600 leading-none my-4 tracking-tighter tabular-nums">${formatTime(cycleTimerValue)}</p>
-                                
-                                <div class="bg-white rounded-xl p-6 border-4 border-slate-200 shadow-sm">
-                                    <p class="text-2xl font-black text-black">${hasAdvancedAirway ? 'CONTINUOUS COMPRESSIONS' : (state.mode === 'NEO' ? 'RATIO 3:1' : (state.mode === 'PAEDS' ? 'RATIO 15:2' : 'RATIO 30:2'))}</p>
-                                    ${hasAdvancedAirway ? '<p class="font-bold text-slate-500 mt-2">Ventilate independently (10-12/min)</p>' : ''}
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-4 mt-6 mb-2"> 
-                                 <button onclick="handleManualCheck()" class="bg-yellow-400 hover:bg-yellow-500 text-black font-black py-6 rounded-2xl shadow-lg border-b-8 border-yellow-600 text-xl active:scale-95 active:border-b-0 translate-y-0 active:translate-y-2 transition-all">
-                                    PAUSE / CHECK
-                                 </button>
-                                 <button onclick="handleRosc()" class="bg-green-500 hover:bg-green-600 text-white font-black py-6 rounded-2xl shadow-lg border-b-8 border-green-700 text-xl active:scale-95 active:border-b-0 translate-y-0 active:translate-y-2 transition-all">
-                                    ROSC
-                                 </button>
+                            <p class="text-2xl font-black text-slate-400 uppercase tracking-widest mb-4">CPR IN PROGRESS</p>
+                            <p id="cpr-cycle-timer-large" class="text-[8rem] font-black text-blue-600 leading-none mb-6 tracking-tighter tabular-nums">${formatTime(cycleTimerValue)}</p>
+                            
+                            <div class="bg-slate-100 rounded-xl p-6 border-4 border-slate-200 shadow-sm mx-auto max-w-lg w-full">
+                                <p class="text-3xl font-black text-black">${hasAdvancedAirway ? 'CONTINUOUS COMPRESSIONS' : (state.mode === 'NEO' ? 'RATIO 3:1' : (state.mode === 'PAEDS' ? 'RATIO 15:2' : 'RATIO 30:2'))}</p>
+                                ${hasAdvancedAirway ? '<p class="font-bold text-slate-500 mt-2">Ventilate independently (10-12/min)</p>' : ''}
                             </div>
                         </div>`;
                      break;
@@ -419,9 +521,9 @@
                                 <button onclick="openSummaryModal('ROSC')" class="text-lg font-bold text-green-800 underline">View Full Summary</button>
                             </div>
                             <div class="space-y-6">
-                                <div class="bg-white p-4 rounded-lg shadow-sm">
-                                    <h3 class="font-black text-xl mb-2">ABCDE Assessment</h3>
-                                    <ul class="list-disc pl-5 space-y-1 font-medium text-slate-800">
+                                <div class="bg-white p-5 rounded-lg shadow-sm">
+                                    <h3 class="font-black text-xl mb-3">ABCDE Assessment</h3>
+                                    <ul class="list-disc pl-5 space-y-2 font-medium text-slate-800">
                                         <li><strong>Airway:</strong> Secure? Intubate?</li>
                                         <li><strong>Breathing:</strong> SpO2 94-98%</li>
                                         <li><strong>Circulation:</strong> 12-lead ECG, BP Support</li>
@@ -429,93 +531,11 @@
                                         <li><strong>Exposure:</strong> Temp Control (32-36°C)</li>
                                     </ul>
                                 </div>
-                                <button onclick="handleRearrest()" class="w-full bg-orange-500 text-white font-black py-4 rounded-xl shadow-lg text-xl border-b-4 border-orange-700 active:scale-95">REARREST (Restart)</button>
-                                <button onclick="handleEndArrest()" class="w-full bg-slate-700 text-white font-bold py-4 rounded-xl shadow text-lg">END EPISODE</button>
                             </div>
                         </div>`;
                      break;
             }
             guidanceContent.innerHTML = content;
-            lucide.createIcons();
-        };
-
-        const renderInterventionButtons = () => {
-            let html = '';
-            const countBadge = (count) => count > 0 ? `<span class="absolute -top-2 -right-2 bg-red-600 text-white text-sm font-bold w-8 h-8 flex items-center justify-center rounded-full border-2 border-white shadow-sm z-10">${count}</span>` : '';
-            const activeClass = "bg-green-100 border-green-500 text-green-900 ring-2 ring-green-500";
-            const inactiveClass = "bg-white border-slate-300 text-slate-500";
-
-            // 1. Airway & Access (Grid)
-            html += `<div class="col-span-2 grid grid-cols-2 gap-3 mb-2">`;
-            html += `
-                <button onclick="toggleIntervention('sga')" class="p-4 rounded-xl text-sm font-black border-4 transition-all ${state.counts.sga > 0 ? activeClass : inactiveClass}">
-                    ${state.counts.sga > 0 ? 'SGA: ACTIVE' : 'SGA (iGel)'}
-                </button>
-                <button onclick="toggleIntervention('ett')" class="p-4 rounded-xl text-sm font-black border-4 transition-all ${state.counts.ett > 0 ? activeClass : inactiveClass}">
-                    ${state.counts.ett > 0 ? 'ETT: ACTIVE' : 'ETT (Tube)'}
-                </button>
-                <button onclick="addCount('access')" class="col-span-2 p-3 rounded-xl text-sm font-black border-4 bg-slate-50 border-slate-200 text-slate-600 active:bg-slate-200">
-                    IV / IO ACCESS SECURED ${state.counts.access > 0 ? '(Done)' : ''}
-                </button>
-            </div>`;
-
-            // 2. Drugs (Large Buttons)
-            if (state.mode === 'ADULT') {
-                html += `
-                <button onclick="addCount('adrenaline')" class="h-32 relative bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-purple-800 active:border-b-0 active:translate-y-2 transition-all">
-                    <span class="text-2xl font-black">ADRENALINE</span>
-                    <span class="text-lg opacity-90 font-mono">1mg</span>
-                    ${countBadge(state.counts.adrenaline)}
-                </button>
-                <button onclick="addCount('amiodarone')" class="h-32 relative bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-orange-700 active:border-b-0 active:translate-y-2 transition-all">
-                    <span class="text-2xl font-black">AMIODARONE</span>
-                    <span class="text-lg opacity-90 font-mono">300mg</span>
-                    ${countBadge(state.counts.amiodarone)}
-                </button>
-                <button onclick="addCount('fluids')" class="h-24 col-span-2 relative bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex items-center justify-center border-b-8 border-blue-700 active:border-b-0 active:translate-y-2 transition-all mt-2">
-                    <span class="text-2xl font-black mr-2">FLUIDS</span>
-                    <span class="text-lg font-mono opacity-90">500ml</span>
-                    ${countBadge(state.counts.fluids)}
-                </button>`;
-            } else if (state.wetflag || state.mode === 'NEO') {
-                // Paeds/Neo Logic
-                const wf = state.wetflag || { 
-                    adrenaline_mcg: Math.round(state.patientWeight * 20), 
-                    adrenaline_vol: (state.patientWeight * 0.2).toFixed(2),
-                    amiodarone: Math.round(state.patientWeight * 5),
-                    fluids: Math.round(state.patientWeight * 10),
-                    glucose: Math.round(state.patientWeight * 2)
-                };
-                
-                html += `
-                <button onclick="addCount('adrenaline')" class="h-32 relative bg-purple-600 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-purple-800">
-                    <span class="text-xl font-black">ADRENALINE</span>
-                    <span class="text-lg font-mono">${wf.adrenaline_mcg}mcg</span>
-                    <span class="text-xs bg-purple-800 px-2 py-1 rounded">${wf.adrenaline_vol}ml (1:10k)</span>
-                    ${countBadge(state.counts.adrenaline)}
-                </button>
-                <button onclick="addCount('amiodarone')" class="h-32 relative bg-orange-500 text-white font-bold rounded-2xl shadow-md active:scale-95 flex flex-col items-center justify-center border-b-8 border-orange-700">
-                    <span class="text-xl font-black">AMIODARONE</span>
-                    <span class="text-lg font-mono">${wf.amiodarone}mg</span>
-                    ${countBadge(state.counts.amiodarone)}
-                </button>
-                 <button onclick="addCount('fluids')" class="h-24 col-span-2 relative bg-blue-500 text-white font-bold rounded-2xl shadow-md active:scale-95 flex items-center justify-center border-b-8 border-blue-700 mt-2">
-                    <span class="text-2xl font-black mr-2">FLUIDS</span>
-                    <span class="text-lg font-mono opacity-90">${wf.fluids}ml</span>
-                    ${countBadge(state.counts.fluids)}
-                </button>
-                `;
-            }
-
-            // Undo Button
-            html += `
-            <div class="col-span-2 mt-6 pt-2 border-t-2 border-slate-200">
-                <button onclick="undoLastAction()" class="w-full py-4 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 flex items-center justify-center active:scale-95">
-                    <i data-lucide="undo-2" class="w-5 h-5 mr-2"></i> UNDO LAST ACTION
-                </button>
-            </div>`;
-
-            interventionsButtonsGrid.innerHTML = html;
             lucide.createIcons();
         };
 
@@ -531,9 +551,9 @@
                 if (s === 2) colorClass = "bg-green-50 text-green-700 border-green-500 ring-2 ring-green-500 shadow-md"; 
 
                 return `
-                <button onclick="toggleCause('${item.id}', '${item.name}')" class="${colorClass} border-4 rounded-xl py-4 px-2 font-bold text-sm transition-all active:scale-95 flex flex-col items-center justify-center h-32">
-                    <span class="text-xl leading-tight mb-2 text-center text-black font-black">${item.name}</span>
-                    <span class="text-[10px] uppercase font-black tracking-widest px-2 py-1 rounded bg-white/50 border border-black/10">
+                <button onclick="toggleCause('${item.id}', '${item.name}')" class="${colorClass} border-2 rounded-lg py-2 px-1 font-bold transition-all active:scale-95 flex flex-col items-center justify-center h-20">
+                    <span class="text-sm leading-tight mb-1 text-center text-black font-black">${item.name}</span>
+                    <span class="text-[9px] uppercase font-black tracking-widest px-1 rounded bg-white/50 border border-black/10">
                         ${s === 0 ? 'CHECK' : (s === 1 ? 'SUSPECTED' : 'TREATED')}
                     </span>
                 </button>`;
@@ -541,15 +561,22 @@
         };
 
         const renderLog = () => {
-             logList.innerHTML = state.log.map(entry => `
-                <div class="p-3 bg-white flex justify-between text-sm items-center">
-                    <span class="font-bold text-black text-md">${entry.message}</span>
-                    <span class="text-slate-500 font-mono text-xs bg-slate-100 px-2 py-1 rounded">${entry.time.toLocaleTimeString()}</span>
+             logContent.innerHTML = `<div class="flex flex-col h-full bg-white rounded-lg border border-slate-200">
+                <div class="p-2 border-b border-slate-200 font-black uppercase text-sm bg-slate-50 flex justify-between">
+                    <span>Events</span>
+                    <button onclick="copyFullRecord()" class="text-xs text-blue-600 underline">Copy</button>
                 </div>
-            `).join('');
+                <div class="flex-grow overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                    ${state.log.map(entry => `
+                    <div class="p-2 bg-slate-50 rounded border border-slate-100 flex justify-between text-xs items-center">
+                        <span class="font-bold text-black text-sm">${entry.message}</span>
+                        <span class="text-slate-500 font-mono">${entry.time.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>`).join('')}
+                </div>
+             </div>`;
         };
 
-        // --- ACTIONS ---
+        // --- Logic Handlers ---
 
         window.setProtocol = (mode) => {
             state.mode = mode;
@@ -559,12 +586,11 @@
             const badges = { 'ADULT': 'ADULT ALS', 'PAEDS': 'PAEDS PLS', 'NEO': 'NEO NLS' };
             const colors = { 'ADULT': 'bg-blue-100 text-blue-800', 'PAEDS': 'bg-teal-100 text-teal-800', 'NEO': 'bg-pink-100 text-pink-800' };
             
-            protocolBadge.className = `text-[10px] font-black uppercase px-2 py-0.5 rounded ${colors[mode]}`;
+            protocolBadge.className = `px-2 py-1 rounded text-xs font-black uppercase ${colors[mode]}`;
             protocolBadge.innerText = badges[mode];
             
-            // Auto-start arrest on protocol selection? No, let user confirm details first, but here we just go to Start/Inputs
-            if(mode === 'ADULT') handleStartArrest(); // Adult goes straight in
-            else renderGuidance(); // Paeds/Neo needs inputs
+            if(mode === 'ADULT') handleStartArrest(); 
+            else renderGuidance(); 
         };
 
         window.handleStartArrest = () => {
@@ -636,7 +662,6 @@
             openSummaryModal('ENDED');
         };
 
-        // Intervention Logic
         window.addCount = (key) => {
             state.counts[key]++;
             addLog(`${key.charAt(0).toUpperCase() + key.slice(1)} Given`);
@@ -645,14 +670,9 @@
         };
 
         window.toggleIntervention = (key) => {
-            if (state.counts[key] > 0) {
-                state.counts[key] = 0;
-                addLog(`${key.toUpperCase()} Removed`);
-            } else {
-                state.counts[key] = 1;
-                addLog(`${key.toUpperCase()} Inserted`);
-            }
-            if (state.currentStep === 'PERFORMING_CPR') renderGuidance(); // Update airway guidance text
+            state.counts[key] = (state.counts[key] > 0) ? 0 : 1;
+            addLog(`${key.toUpperCase()} ${state.counts[key] > 0 ? 'Inserted' : 'Removed'}`);
+            if (state.currentStep === 'PERFORMING_CPR') renderGuidance();
             renderInterventionButtons();
         };
         
@@ -668,7 +688,6 @@
             const last = state.log[0];
             const msg = last.message.toLowerCase();
 
-            // Simple heuristics for undoing counts
             if (msg.includes('adrenaline given')) state.counts.adrenaline = Math.max(0, state.counts.adrenaline - 1);
             else if (msg.includes('amiodarone given')) state.counts.amiodarone = Math.max(0, state.counts.amiodarone - 1);
             else if (msg.includes('fluids given')) state.counts.fluids = Math.max(0, state.counts.fluids - 1);
@@ -689,7 +708,7 @@
             }, 1000);
         };
 
-        window.startCycleTimer = () => { // Made global for reset button
+        window.startCycleTimer = () => {
             if (cycleTimerInterval) clearInterval(cycleTimerInterval);
             cycleTimerValue = cycleDuration;
             cprCycleTimerSmall.textContent = formatTime(cycleTimerValue);
@@ -728,7 +747,6 @@
         
         window.resetCycleTimer = () => { startCycleTimer(); addLog('Cycle Timer Reset'); };
 
-        // --- PAEDS/NEO HELPERS ---
         window.updatePaedsCalc = (val, type) => {
             if (type === 'age') {
                 const wf = calculateWetflag(val);
@@ -749,41 +767,53 @@
             handleStartArrest();
         };
 
-        // --- UI UPDATER ---
         const updateUI = () => {
+            const isArrest = state.isArrestActive;
+            timerDisplayNormal.classList.toggle('hidden', !isArrest);
+            leftPanelCombinedContainer.classList.toggle('hidden', !isArrest);
+            manualCheckBtn.classList.toggle('hidden', !state.isCprInProgress);
+            roscBtn.classList.toggle('hidden', !state.isCprInProgress);
+            rearrestBtn.classList.toggle('hidden', state.currentStep !== 'POST_ROSC');
+            viewSummaryBtn.classList.toggle('hidden', !isArrest);
+            
+            if (isArrest) {
+                endArrestBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                endArrestBtn.classList.add('bg-slate-700', 'hover:bg-slate-800', 'text-white');
+                endArrestBtn.disabled = false;
+            } else {
+                endArrestBtn.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                endArrestBtn.classList.remove('bg-slate-700', 'hover:bg-slate-800', 'text-white');
+                endArrestBtn.disabled = true;
+            }
+
             renderGuidance();
             renderInterventionButtons();
             renderLog();
             populateReversible();
         };
 
-        // --- NAVIGATION ---
-        const tabs = {
-            'tab-guidance': ['guidance-content'],
-            'tab-drugs': ['drugs-content'],
-            'tab-causes': ['causes-content'],
-            'tab-log': ['log-content'],
-            'tab-more': ['special-circs-content']
+        // Tab Switching
+        const setMainActiveTab = (activeTab) => {
+            [guidanceTab, logTab, specialCircsTab].forEach(t => {
+                t.classList.remove('bg-white', 'text-blue-700', 'shadow-sm', 'border-slate-200');
+                t.classList.add('text-slate-500', 'hover:bg-white/50');
+            });
+            activeTab.classList.add('bg-white', 'text-blue-700', 'shadow-sm', 'border-slate-200');
+            activeTab.classList.remove('text-slate-500', 'hover:bg-white/50');
+
+            document.getElementById('log-content').classList.add('hidden');
+            document.getElementById('guidance-content').classList.add('hidden');
+            document.getElementById('special-circs-content').classList.add('hidden');
+
+            if(activeTab === logTab) document.getElementById('log-content').classList.remove('hidden');
+            else if (activeTab === specialCircsTab) document.getElementById('special-circs-content').classList.remove('hidden');
+            else document.getElementById('guidance-content').classList.remove('hidden');
         };
 
-        document.querySelectorAll('.bottom-nav-item').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                ['guidance-content', 'drugs-content', 'causes-content', 'log-content', 'special-circs-content'].forEach(id => {
-                    document.getElementById(id).classList.add('hidden');
-                });
-                
-                tabs[btn.id].forEach(id => document.getElementById(id).classList.remove('hidden'));
-                
-                // Force re-renders if needed
-                if(btn.id === 'tab-drugs') renderInterventionButtons();
-                if(btn.id === 'tab-causes') populateReversible();
-            });
-        });
+        guidanceTab.addEventListener('click', () => setMainActiveTab(guidanceTab));
+        logTab.addEventListener('click', () => setMainActiveTab(logTab));
+        specialCircsTab.addEventListener('click', () => setMainActiveTab(specialCircsTab));
 
-        // --- METRONOME & INIT ---
         document.getElementById('metronome-btn').addEventListener('click', async () => {
             if (Tone.context.state !== 'running') await Tone.start();
             if (isMetronomeOn) {
@@ -795,7 +825,7 @@
                 const synth = new Tone.Synth().toDestination();
                 metronome = new Tone.Loop(time => {
                     synth.triggerAttackRelease("C5", "32n", time);
-                }, "0.55").start(0); // ~110bpm
+                }, "0.55").start(0);
                 Tone.Transport.start();
                 document.getElementById('metronome-btn').classList.add('bg-yellow-300');
             }
@@ -806,11 +836,10 @@
         });
         
         document.getElementById('add-intervention-btn').addEventListener('click', () => {
-             const val = document.getElementById('custom-intervention-input').value;
-             if(val) { addLog(`Note: ${val}`); document.getElementById('custom-intervention-input').value = ''; }
+             const val = customInterventionInput.value;
+             if(val) { addLog(`Note: ${val}`); customInterventionInput.value = ''; }
         });
 
-        // Summary Modal Logic (Simplified)
         window.openSummaryModal = (status) => { 
             document.getElementById('summary-content').innerText = state.log.map(l => `[${l.time.toLocaleTimeString()}] ${l.message}`).join('\n');
             document.getElementById('summary-modal').classList.remove('hidden'); 
@@ -819,19 +848,65 @@
         window.copyFullRecord = () => {
              navigator.clipboard.writeText(document.getElementById('summary-content').innerText).then(() => alert('Copied to Clipboard'));
         };
-        
-        // Special Circs Static Content
-        document.getElementById('special-circs-content').innerHTML = `
-            <h2 class="font-black text-2xl mb-4">SPECIAL CIRCUMSTANCES</h2>
-            <ul class="list-disc pl-5 space-y-2 font-bold text-slate-700">
-                <li><span class="text-black">Hypothermia:</span> &lt;30°C: Max 3 shocks, no drugs. 30-35°C: Double drug intervals.</li>
-                <li><span class="text-black">Pregnancy:</span> Left lateral tilt. Deliver fetus if no ROSC in 4 mins.</li>
-                <li><span class="text-black">Toxins:</span> Consult Toxbase immediately.</li>
-                <li><span class="text-black">Anaphylaxis:</span> Early adrenaline, aggressive fluids.</li>
-                <li><span class="text-black">Asthma:</span> Slow ventilation, watch for tension pneumo.</li>
-            </ul>`;
 
-        // Init
+        // Static Content
+        specialCircsContent.innerHTML = `
+            <div class="space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-2xl text-slate-800">Special Circumstances</h3>
+                    <a href="https://www.resus.org.uk/library/2025-resuscitation-guidelines" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-xs flex items-center">
+                        <i data-lucide="external-link" class="w-4 h-4 mr-2"></i> RCUK 2025
+                    </a>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                     <h4 class="font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">Hypothermia</h4>
+                     <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        <li><strong>< 30°C:</strong> Max 3 shocks. <span class="text-red-600 font-bold">WITHHOLD DRUGS</span>.</li>
+                        <li><strong>30°C - 35°C:</strong> Double drug intervals (every 6-10 mins).</li>
+                        <li><strong>> 35°C:</strong> Standard ALS protocol.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                     <h4 class="font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">Hyperkalaemia</h4>
+                     <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        <li><strong>Protect:</strong> Calcium Chloride 10% (10-30ml) or Calc Gluconate (30ml).</li>
+                        <li><strong>Shift:</strong> Insulin (10 units) + Glucose (25g/50ml 50%).</li>
+                        <li><strong>Eliminate:</strong> Dialysis consideration post-ROSC.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                     <h4 class="font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">Anaphylaxis</h4>
+                     <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        <li><strong>Airway:</strong> Early intubation (laryngeal oedema risk).</li>
+                        <li><strong>Adrenaline:</strong> 0.5mg IM repeated. IV bolus if arrested.</li>
+                        <li><strong>Fluids:</strong> Aggressive crystalloid challenge.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                     <h4 class="font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">Trauma (Traumatic Cardiac Arrest)</h4>
+                     <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        <li><strong>Control Haemorrhage:</strong> Pelvic binder, torniquets.</li>
+                        <li><strong>Oxygenate:</strong> Intubate immediately.</li>
+                        <li><strong>Decompress:</strong> Bilateral thoracostomies (Tension Pneumo).</li>
+                        <li><strong>Volume:</strong> Blood products (MTP), TXA 1g (now 2g in some protocols).</li>
+                        <li><span class="text-red-600 font-bold">Consider Clamshell Thoracotomy</span> if penetrating chest injury + signs of life < 15 mins.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                     <h4 class="font-bold text-slate-900 mb-2 border-b border-slate-200 pb-1">Pregnancy</h4>
+                     <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
+                        <li><strong>Position:</strong> Manual left uterine displacement.</li>
+                        <li><strong>Delivery:</strong> Perimortem C-Section if no ROSC by <span class="font-bold text-red-600">4 minutes</span> (Deliver by 5).</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
         updateUI();
     </script>
 </body>
