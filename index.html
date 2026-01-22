@@ -1283,7 +1283,64 @@
                     <div class="text-sm text-slate-600 space-y-1">
                         <div><strong>Weight:</strong> ${state.patientWeight}kg</div>
                         <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k) | <strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml</div>
-                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm\n`;
+                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
+                    </div>
+                 </div>
+                ` : ''}
+
+                <div class="border-t border-slate-200 pt-4">
+                    <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
+                    <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
+                        ${state.log.map(l => `<div class="mb-1"><span class="text-slate-400">[${l.time.toLocaleTimeString()}]</span> ${l.message}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+            
+            summaryContent.innerHTML = html;
+            summaryModal.classList.remove('hidden');
+        };
+        
+        window.closeSummary = () => {
+             summaryModal.classList.add('hidden');
+        };
+        
+        window.copyFullRecord = () => {
+            // 1. Generate Log Text
+            let logText = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
+            state.log.forEach(l => {
+                logText += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
+            });
+
+            // 2. Generate Summary Text
+            const duration = state.startTime && state.endTime 
+                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
+                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
+            
+            let summaryText = `RESUSCITATION SUMMARY\n`;
+            summaryText += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
+            summaryText += `Total Duration: ${duration}\n`;
+            summaryText += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
+            summaryText += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
+            summaryText += `TOTALS:\n`;
+            summaryText += `- Adrenaline: ${state.counts.adrenaline}\n`;
+            summaryText += `- Amiodarone: ${state.counts.amiodarone}\n`;
+            summaryText += `- Fluids: ${state.counts.fluids}\n`;
+            summaryText += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
+            summaryText += `- Access: ${state.counts.access}\n`;
+            
+            if (state.wetflag) {
+                summaryText += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
+                summaryText += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
+                summaryText += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
+                summaryText += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
+                summaryText += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
+            }
+            if (state.mode === 'NEO' && state.patientWeight) {
+                const w = state.patientWeight;
+                summaryText += `\nPATIENT INFO (Neonatal):\n`;
+                summaryText += `Weight: ${w}kg\n`;
+                summaryText += `Adrenaline: ${Math.round(w * 20)}mcg (${(w * 0.2).toFixed(2)}ml 1:10k) | Fluid: ${Math.round(w * 10)}ml\n`;
+                summaryText += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
             }
             
             // 3. Combine
@@ -1459,80 +1516,7 @@
         copyLogBtn.addEventListener('click', () => {
              const text = state.log.map(l => `[${l.time.toLocaleTimeString()}] ${l.message}`).join('\n');
              navigator.clipboard.writeText(text).then(() => alert("Log Copied"));
-        });
-        
-        // Populate Reversible Causes
-        const populateReversible = () => {
-             const container = document.getElementById('causes-checklist');
-             let html = `
-                <div class="grid grid-cols-6 gap-2 text-[10px] uppercase font-bold text-slate-400 mb-2">
-                    <div class="col-span-4">Cause</div>
-                    <div class="text-center">Treated</div>
-                    <div class="text-center">Likely</div>
-                </div>
-             `;
-             html += reversibleCauses.map(item => `
-                <div class="grid grid-cols-6 gap-2 items-center text-sm py-1 border-b border-slate-50">
-                    <div class="col-span-4 font-medium text-slate-700">${item.name}</div>
-                    <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500" 
-                               onchange="addLog(this.checked ? 'Cause Treated: ${item.name}' : 'Cause Untreated: ${item.name}')">
-                    </div>
-                    <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500" 
-                               onchange="handleLikelyCause('${item.name}', this.checked)">
-                    </div>
-                </div>
-             `).join('');
-             container.innerHTML = html;
-        };
-        
-        window.handleLikelyCause = (name, isChecked) => {
-             addLog(isChecked ? `Likely Cause identified: ${name}` : `Likely Cause deselected: ${name}`);
-        };
-        
-        populateReversible();
-
-        // Populate Special Circs
-        specialCircsContent.innerHTML = `
-            <div class="prose prose-sm max-w-none text-slate-700">
-                <h3 class="font-bold text-lg mb-2">Special Circumstances (RCUK 2025)</h3>
-                <ul class="list-disc list-inside space-y-2">
-                    <li><strong>Hypothermia:</strong> < 30°C: Max 3 shocks, no drugs. 30-35°C: Double drug intervals.</li>
-                    <li><strong>Pregnancy:</strong> Manual uterine displacement (Left). Deliver < 4 mins if no ROSC.</li>
-                    <li><strong>Toxins:</strong> Consult Toxbase. Consider specific antidotes.</li>
-                    <li><strong>Anaphylaxis:</strong> Aggressive fluids. Early adrenaline.</li>
-                    <li><strong>Asthma:</strong> Low rate, high expiratory time. Check for tension pneumothorax.</li>
-                </ul>
-            </div>
-        `;
-
-        // Start metronome
-        metronomeBtn.addEventListener('click', async () => {
-            if (Tone.context.state !== 'running') await Tone.start();
-            if (isMetronomeOn) {
-                isMetronomeOn = false;
-                metronomeBtn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro`;
-                metronomeBtn.classList.remove('bg-slate-300', 'text-slate-900'); 
-                if(metronome) metronome.stop();
-            } else {
-                isMetronomeOn = true;
-                metronomeBtn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 mr-1"></i> On`; 
-                metronomeBtn.classList.add('bg-slate-300', 'text-slate-900'); 
-                const synth = new Tone.Synth().toDestination();
-                metronome = new Tone.Loop(time => {
-                    synth.triggerAttackRelease("C5", "32n", time);
-                }, "0.55").start(0); // ~110bpm
-                Tone.Transport.start();
-            }
-            lucide.createIcons();
-        });
-
-        // Initial Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            updateUI();
-            lucide.createIcons();
-        });
+          });
 
     </script>
 </body>
