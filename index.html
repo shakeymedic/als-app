@@ -19,10 +19,10 @@
         /* Custom scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         /* Firefox support */
-.custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 #f1f5f9;
+        }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
@@ -109,7 +109,7 @@
                 </div>
                 
                 <div id="patient-info-display" class="hidden mb-3 p-3 rounded-lg text-xs font-mono border-2">
-                    </div>
+                </div>
                 
                 <div id="timer-display-normal" class="text-center">
                     <div class="flex justify-between items-end">
@@ -157,7 +157,7 @@
                  </div>
             </div>
             
-             <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
+            <div id="left-panel-combined" class="bg-white rounded-xl shadow-lg p-4 hidden">
                  <div id="interventions-combined-container">
                      <h3 class="font-bold text-lg mb-3 text-center text-slate-600">Interventions & Drugs</h3>
                      <div id="interventions-buttons-grid" class="grid grid-cols-2 gap-2">
@@ -190,16 +190,21 @@
                     <button id="guidance-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-blue-500 text-blue-600">
                         Guidance
                     </button>
+                    <button id="pre-arrival-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
+                        <div class="flex items-center">
+                            <i data-lucide="ambulance" class="h-5 w-5 mr-2"></i> Pre-Arrival
+                        </div>
+                    </button>
                     <button id="log-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-    <div class="flex items-center">
-        <i data-lucide="history" class="h-5 w-5 mr-2"></i> Event Log
-    </div>
-</button>
-<button id="special-circs-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
-    <div class="flex items-center">
-        <i data-lucide="alert-triangle" class="h-5 w-5 mr-2"></i> Special Circs
-    </div>
-</button>
+                        <div class="flex items-center">
+                            <i data-lucide="history" class="h-5 w-5 mr-2"></i> Log
+                        </div>
+                    </button>
+                    <button id="special-circs-tab" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-lg border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300">
+                        <div class="flex items-center">
+                            <i data-lucide="alert-triangle" class="h-5 w-5 mr-2"></i> Special Circs
+                        </div>
+                    </button>
                 </nav>
                 <div class="flex items-center ml-4">
                     <button id="metronome-btn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold py-2 px-3 rounded-lg mr-2 border border-slate-300 flex items-center">
@@ -219,6 +224,47 @@
             
             <div id="content-area" class="flex-grow overflow-y-auto pr-2 pl-2 custom-scrollbar relative">
                 <div id="guidance-content" class="h-full"></div>
+                
+                <div id="pre-arrival-content" class="hidden p-4">
+                    <h3 class="font-bold text-lg text-slate-700 mb-4 flex items-center"><i data-lucide="ambulance" class="mr-2"></i>Pre-Hospital / Handover Data</h3>
+                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 text-sm text-blue-700">
+                        Enter data from ambulance/pre-hospital crew here. Clicking "Add to Record" will update the total counts and event log.
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Previous Rhythms / History</label>
+                            <textarea id="pre-rhythm-history" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="3" placeholder="e.g. 11:00 Call -> Arrest -> CPR -> VF x 3 -> Amiodarone -> Asystole on arrival"></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Shocks Delivered</label>
+                                <input type="number" id="pre-shocks-input" class="w-full p-2 border border-slate-300 rounded-lg" min="0" value="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Cycles Completed</label>
+                                <input type="number" id="pre-cycles-input" class="w-full p-2 border border-slate-300 rounded-lg" min="0" value="0">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                             <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Adrenaline (Doses/Count)</label>
+                                <input type="number" id="pre-adr-input" class="w-full p-2 border border-slate-300 rounded-lg" min="0" value="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Amiodarone (Doses/Count)</label>
+                                <input type="number" id="pre-amio-input" class="w-full p-2 border border-slate-300 rounded-lg" min="0" value="0">
+                            </div>
+                        </div>
+
+                        <button onclick="submitPreArrivalData()" id="submit-pre-data-btn" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow mt-4 flex justify-center items-center">
+                            <i data-lucide="save" class="w-4 h-4 mr-2"></i> Add to Record
+                        </button>
+                    </div>
+                </div>
+
                 <div id="log-content" class="hidden"></div>
                 <div id="special-circs-content" class="hidden"></div>
             </div>
@@ -291,9 +337,11 @@
         const endArrestBtn = document.getElementById('end-arrest-btn');
         const manualCheckBtn = document.getElementById('manual-check-btn');
         const guidanceTab = document.getElementById('guidance-tab');
+        const preArrivalTab = document.getElementById('pre-arrival-tab'); // NEW
         const logTab = document.getElementById('log-tab');
         const specialCircsTab = document.getElementById('special-circs-tab');
         const guidanceContent = document.getElementById('guidance-content');
+        const preArrivalContent = document.getElementById('pre-arrival-content'); // NEW
         const logContent = document.getElementById('log-content');
         const specialCircsContent = document.getElementById('special-circs-content');
         const copyLogBtn = document.getElementById('copy-log-btn');
@@ -410,7 +458,6 @@
                 const adrMcg = Math.round(w * 20);
                 const fluid = Math.round(w * 10);
                 const glucose = Math.round(w * 2);
-                // Neo tube sizing: typically 2.5-4.0mm depending on weight
                 const tubeSize = w < 1 ? 2.5 : (w < 2 ? 3.0 : (w < 3 ? 3.5 : 3.5));
                 const tubeDepth = w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10));
                 
@@ -629,36 +676,6 @@
                         </div>`;
                     break;
 
-                case 'PRE_ARREST_INFO':
-                     content = `
-                        <div>
-                            <h2 class="text-2xl font-bold text-slate-700 mb-4 text-center">Pre-Arrival Information</h2>
-                            <div class="space-y-4 text-slate-800 bg-slate-100 p-4 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Cycles Completed:</label>
-                                    <input type="number" id="pre-cycles" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Shocks Delivered:</label>
-                                    <input type="number" id="pre-shocks" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Adrenaline Given:</label>
-                                    <input type="number" id="pre-adrenaline" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Amiodarone Given:</label>
-                                    <input type="number" id="pre-amiodarone" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                            </div>
-                            <div class="mt-8">
-                                <button id="continue-from-pre-arrest-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-4 rounded-lg text-xl shadow-lg flex items-center justify-center">
-                                    Continue to Rhythm Check
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    break;
                 case 'ASSESS_RHYTHM':
                     content = `
                         <div class="text-center">
@@ -958,39 +975,55 @@
         };
         
         const handlePreArrestedArrival = () => {
-            state.currentStep = 'PRE_ARREST_INFO';
-            updateUI();
+            // Start arrest logic
+            handleStartArrest();
+            
+            // Log it
+            addLog("Patient arrived in arrest. Opening Pre-Arrival Tab.");
+            
+            // Switch to Pre-Arrival Tab immediately
+            preArrivalTab.click();
         };
 
-        const handleContinueFromPreArrest = () => {
-            const cycles = parseInt(document.getElementById('pre-cycles').value) || 0;
-            const shocks = parseInt(document.getElementById('pre-shocks').value) || 0;
-            const adrenaline = parseInt(document.getElementById('pre-adrenaline').value) || 0;
-            const amiodarone = parseInt(document.getElementById('pre-amiodarone').value) || 0;
-
-            state.isArrestActive = true;
-            state.startTime = new Date();
-            startTotalTimer();
-
-            addLog(`${state.mode} Patient arrived in arrest.`);
-            if (cycles > 0) addLog(`[PRE-ARRIVAL] ${cycles} cycles completed.`);
-            if (shocks > 0) addLog(`[PRE-ARRIVAL] ${shocks} shocks delivered.`);
-            
-            if (adrenaline > 0) {
-                state.counts.adrenaline = adrenaline;
-                addLog(`[PRE-ARRIVAL] ${adrenaline} Adrenaline recorded.`);
-            }
-            if (amiodarone > 0) {
-                state.counts.amiodarone = amiodarone;
-                addLog(`[PRE-ARRIVAL] ${amiodarone} Amiodarone recorded.`);
-            }
-
-            state.cycleCount = cycles;
-            state.shocksDelivered = shocks;
-            state.counts.shocks = shocks;
-            
-            state.currentStep = 'ASSESS_RHYTHM';
-            updateUI();
+        // NEW: Submit Pre-Arrival Data
+        window.submitPreArrivalData = () => {
+             const hx = document.getElementById('pre-rhythm-history').value;
+             const shocks = parseInt(document.getElementById('pre-shocks-input').value) || 0;
+             const cycles = parseInt(document.getElementById('pre-cycles-input').value) || 0;
+             const adr = parseInt(document.getElementById('pre-adr-input').value) || 0;
+             const amio = parseInt(document.getElementById('pre-amio-input').value) || 0;
+             
+             // Update Totals
+             state.shocksDelivered += shocks;
+             state.counts.shocks += shocks;
+             state.cycleCount += cycles;
+             state.counts.adrenaline += adr;
+             state.counts.amiodarone += amio;
+             
+             // LOGGING
+             let logMsg = "[PRE-ARRIVAL DATA ADDED]\n";
+             if(hx) logMsg += `Hx: ${hx}\n`;
+             if(shocks) logMsg += `+ ${shocks} Shocks\n`;
+             if(cycles) logMsg += `+ ${cycles} Cycles\n`;
+             if(adr) logMsg += `+ ${adr} Adrenaline\n`;
+             if(amio) logMsg += `+ ${amio} Amiodarone\n`;
+             
+             addLog(logMsg);
+             
+             // Disable button to prevent double submit
+             const btn = document.getElementById('submit-pre-data-btn');
+             btn.disabled = true;
+             btn.innerHTML = `<i data-lucide="check" class="w-4 h-4 mr-2"></i> Data Added`;
+             btn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-green-600');
+             btn.classList.remove('bg-slate-800', 'hover:bg-slate-900');
+             lucide.createIcons();
+             
+             updateUI();
+             
+             // Optional: switch back to Guidance
+             setTimeout(() => {
+                 guidanceTab.click();
+             }, 1000);
         };
 
         const handleRhythmChoice = (isShockable) => {
@@ -1049,18 +1082,17 @@
         };
 
         const handleEndArrest = () => {
-     state.endTime = new Date();
-     addLog(`Arrest Concluded.`);
-     clearInterval(cycleTimerInterval);
-     clearInterval(totalElapsedInterval);
-     
-     // ADD THIS BLOCK
-     if (isMetronomeOn) {
-        metronomeBtn.click(); // Toggles it off via the existing event listener
-     }
+            state.endTime = new Date();
+            addLog(`Arrest Concluded.`);
+            clearInterval(cycleTimerInterval);
+            clearInterval(totalElapsedInterval);
+            
+            if (isMetronomeOn) {
+                metronomeBtn.click(); // Toggles it off
+            }
 
-     openSummaryModal('ENDED');
-};
+            openSummaryModal('ENDED');
+        };
 
         const handleManualCheck = () => {
             if (!state.isCprInProgress) return;
@@ -1073,12 +1105,11 @@
         };
 
         const resetApp = (clearLog = true) => {
-    // ADD THIS BLOCK AT THE START
-    if (isMetronomeOn) {
-        metronomeBtn.click();
-    }
+            if (isMetronomeOn) {
+                metronomeBtn.click();
+            }
 
-    clearInterval(totalElapsedInterval);
+            clearInterval(totalElapsedInterval);
             clearInterval(cycleTimerInterval);
             document.body.classList.remove('flash-active');
             state.isArrestActive = false;
@@ -1098,8 +1129,23 @@
             cprCycleTimerSmall.innerText = "02:00";
             document.getElementById('handover-notes').value = '';
             
+            // Reset Pre-Arrival Inputs
+            document.getElementById('pre-rhythm-history').value = '';
+            document.getElementById('pre-shocks-input').value = '0';
+            document.getElementById('pre-cycles-input').value = '0';
+            document.getElementById('pre-adr-input').value = '0';
+            document.getElementById('pre-amio-input').value = '0';
+            const preBtn = document.getElementById('submit-pre-data-btn');
+            preBtn.disabled = false;
+            preBtn.innerHTML = `<i data-lucide="save" class="w-4 h-4 mr-2"></i> Add to Record`;
+            preBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-green-600');
+            preBtn.classList.add('bg-slate-800', 'hover:bg-slate-900');
+            
             closeSummary();
             updateUI();
+            
+            // Reset Tabs
+            guidanceTab.click();
         };
 
         // --- Timers ---
@@ -1237,65 +1283,7 @@
                     <div class="text-sm text-slate-600 space-y-1">
                         <div><strong>Weight:</strong> ${state.patientWeight}kg</div>
                         <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k) | <strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml</div>
-                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
-                    </div>
-                 </div>
-                ` : ''}
-
-                <div class="border-t border-slate-200 pt-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
-                        ${state.log.map(l => `<div class="mb-1"><span class="text-slate-400">[${l.time.toLocaleTimeString()}]</span> ${l.message}</div>`).join('')}
-                    </div>
-                </div>
-             `;
-             
-             summaryContent.innerHTML = html;
-             summaryModal.classList.remove('hidden');
-        };
-        
-        window.closeSummary = () => {
-             summaryModal.classList.add('hidden');
-        };
-        
-        // MODIFIED: Combined Copy Function
-        window.copyFullRecord = () => {
-            // 1. Generate Log Text
-            let logText = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
-            state.log.forEach(l => {
-                logText += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
-            });
-
-            // 2. Generate Summary Text
-            const duration = state.startTime && state.endTime 
-                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
-                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
-            
-            let summaryText = `RESUSCITATION SUMMARY\n`;
-            summaryText += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
-            summaryText += `Total Duration: ${duration}\n`;
-            summaryText += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
-            summaryText += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
-            summaryText += `TOTALS:\n`;
-            summaryText += `- Adrenaline: ${state.counts.adrenaline}\n`;
-            summaryText += `- Amiodarone: ${state.counts.amiodarone}\n`;
-            summaryText += `- Fluids: ${state.counts.fluids}\n`;
-            summaryText += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
-            summaryText += `- Access: ${state.counts.access}\n`;
-            
-            if (state.wetflag) {
-                summaryText += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
-                summaryText += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
-                summaryText += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
-                summaryText += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
-                summaryText += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
-            }
-            if (state.mode === 'NEO' && state.patientWeight) {
-                const w = state.patientWeight;
-                summaryText += `\nPATIENT INFO (Neonatal):\n`;
-                summaryText += `Weight: ${w}kg\n`;
-                summaryText += `Adrenaline: ${Math.round(w * 20)}mcg (${(w * 0.2).toFixed(2)}ml 1:10k) | Fluid: ${Math.round(w * 10)}ml\n`;
-                summaryText += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
+                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm\n`;
             }
             
             // 3. Combine
@@ -1315,8 +1303,6 @@
             });
         };
         
-        // REMOVED: copySummaryOnly and copyLogOnly (replaced by copyFullRecord)
-
         // --- Event Listeners ---
         document.getElementById('guidance-content').addEventListener('click', (e) => {
             const button = e.target.closest('button');
@@ -1325,14 +1311,14 @@
             switch (button.id) {
                 case 'start-arrest-btn': handleStartArrest(); break;
                 case 'pre-arrested-btn': handlePreArrestedArrival(); break;
-                case 'continue-from-pre-arrest-btn': handleContinueFromPreArrest(); break;
+                // REMOVED old pre-arrest continue btn
                 case 'shockable-btn': handleRhythmChoice(true); break;
                 case 'non-shockable-btn': handleRhythmChoice(false); break;
                 case 'deliver-shock-btn': handleDeliverShock(); break;
             }
         });
 
-        // Add listeners for static buttons that were missing
+        // Add listeners for static buttons
         document.getElementById('manual-check-btn').addEventListener('click', handleManualCheck);
         document.getElementById('rosc-btn').addEventListener('click', handleRosc);
         document.getElementById('rearrest-btn').addEventListener('click', handleRearrest);
@@ -1429,7 +1415,7 @@
 
         // Tab Switching Logic
         const setMainActiveTab = (activeTab) => {
-            [guidanceTab, logTab, specialCircsTab].forEach(t => {
+            [guidanceTab, logTab, specialCircsTab, preArrivalTab].forEach(t => {
                 t.classList.remove('border-blue-500', 'text-blue-600');
                 t.classList.add('border-transparent', 'text-slate-500');
             });
@@ -1439,6 +1425,7 @@
             document.getElementById('log-content').classList.add('hidden');
             document.getElementById('guidance-content').classList.add('hidden');
             document.getElementById('special-circs-content').classList.add('hidden');
+            document.getElementById('pre-arrival-content').classList.add('hidden'); // NEW
             copyLogBtn.classList.add('hidden');
             printLogBtn.classList.add('hidden');
 
@@ -1448,6 +1435,8 @@
                 printLogBtn.classList.remove('hidden');
             } else if (activeTab === specialCircsTab) {
                 document.getElementById('special-circs-content').classList.remove('hidden');
+            } else if (activeTab === preArrivalTab) { // NEW
+                document.getElementById('pre-arrival-content').classList.remove('hidden');
             } else {
                 document.getElementById('guidance-content').classList.remove('hidden');
             }
@@ -1456,6 +1445,7 @@
         guidanceTab.addEventListener('click', () => setMainActiveTab(guidanceTab));
         logTab.addEventListener('click', () => setMainActiveTab(logTab));
         specialCircsTab.addEventListener('click', () => setMainActiveTab(specialCircsTab));
+        preArrivalTab.addEventListener('click', () => setMainActiveTab(preArrivalTab)); // NEW
 
         const renderLog = () => {
              logContent.innerHTML = state.log.map(entry => `
@@ -1522,15 +1512,13 @@
             if (Tone.context.state !== 'running') await Tone.start();
             if (isMetronomeOn) {
                 isMetronomeOn = false;
-                // UPDATED: Keeps the icon small and text short
                 metronomeBtn.innerHTML = `<i data-lucide="volume-x" class="w-4 h-4 mr-1"></i> Metro`;
-                metronomeBtn.classList.remove('bg-slate-300', 'text-slate-900'); // Optional: visuals
+                metronomeBtn.classList.remove('bg-slate-300', 'text-slate-900'); 
                 if(metronome) metronome.stop();
             } else {
                 isMetronomeOn = true;
-                // UPDATED: Keeps the icon small and text short
                 metronomeBtn.innerHTML = `<i data-lucide="volume-2" class="w-4 h-4 mr-1"></i> On`; 
-                metronomeBtn.classList.add('bg-slate-300', 'text-slate-900'); // Optional: show active state
+                metronomeBtn.classList.add('bg-slate-300', 'text-slate-900'); 
                 const synth = new Tone.Synth().toDestination();
                 metronome = new Tone.Loop(time => {
                     synth.triggerAttackRelease("C5", "32n", time);
