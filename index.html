@@ -632,23 +632,47 @@
                 case 'PRE_ARREST_INFO':
                      content = `
                         <div>
-                            <h2 class="text-2xl font-bold text-slate-700 mb-4 text-center">Pre-Arrival Information</h2>
-                            <div class="space-y-4 text-slate-800 bg-slate-100 p-4 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Cycles Completed:</label>
-                                    <input type="number" id="pre-cycles" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
+                            <h2 class="text-2xl font-bold text-slate-700 mb-4 text-center">Patient Arrival / Handover</h2>
+                            <div class="space-y-4 text-slate-800 bg-slate-100 p-4 rounded-lg border border-slate-200">
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-200 pb-4">
+                                     <div>
+                                        <label class="font-bold text-sm text-slate-600 block mb-1">Time of Arrest (HH:MM)</label>
+                                        <input type="time" id="pre-arrest-time" class="w-full p-2 border rounded-md shadow-sm">
+                                     </div>
+                                     <div>
+                                        <label class="font-bold text-sm text-slate-600 block mb-1">ALS Start Time (HH:MM)</label>
+                                        <input type="time" id="pre-als-time" class="w-full p-2 border rounded-md shadow-sm">
+                                     </div>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Shocks Delivered:</label>
-                                    <input type="number" id="pre-shocks" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="font-bold text-sm text-slate-600 block mb-1">Cycles Completed</label>
+                                        <input type="number" id="pre-cycles" min="0" value="0" class="w-full p-2 text-center border rounded-md shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="font-bold text-sm text-slate-600 block mb-1">Shocks Delivered</label>
+                                        <input type="number" id="pre-shocks" min="0" value="0" class="w-full p-2 text-center border rounded-md shadow-sm">
+                                    </div>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Adrenaline Given:</label>
-                                    <input type="number" id="pre-adrenaline" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <label class="font-medium">Amiodarone Given:</label>
-                                    <input type="number" id="pre-amiodarone" min="0" value="0" class="w-24 p-2 text-center border rounded-md shadow-sm">
+
+                                <div class="border-t border-slate-200 pt-4">
+                                     <label class="font-bold text-sm text-slate-600 block mb-2">Drugs / Fluids Administered</label>
+                                     <div class="grid grid-cols-3 gap-2">
+                                        <div>
+                                            <label class="text-xs text-slate-500 block">Adrenaline</label>
+                                            <input type="number" id="pre-adrenaline" min="0" value="0" placeholder="Doses" class="w-full p-2 text-center border rounded-md shadow-sm">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-slate-500 block">Amiodarone</label>
+                                            <input type="number" id="pre-amiodarone" min="0" value="0" placeholder="Doses" class="w-full p-2 text-center border rounded-md shadow-sm">
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-slate-500 block">Fluids (Boluses)</label>
+                                            <input type="number" id="pre-fluids" min="0" value="0" placeholder="Boluses" class="w-full p-2 text-center border rounded-md shadow-sm">
+                                        </div>
+                                     </div>
                                 </div>
                             </div>
                             <div class="mt-8">
@@ -963,32 +987,64 @@
         };
 
         const handleContinueFromPreArrest = () => {
+            // 1. Gather Data
             const cycles = parseInt(document.getElementById('pre-cycles').value) || 0;
             const shocks = parseInt(document.getElementById('pre-shocks').value) || 0;
             const adrenaline = parseInt(document.getElementById('pre-adrenaline').value) || 0;
             const amiodarone = parseInt(document.getElementById('pre-amiodarone').value) || 0;
+            const fluids = parseInt(document.getElementById('pre-fluids').value) || 0;
+            
+            const arrestTimeStr = document.getElementById('pre-arrest-time').value;
+            const alsTimeStr = document.getElementById('pre-als-time').value;
 
+            // 2. Set State
             state.isArrestActive = true;
-            state.startTime = new Date();
+            
+            // Time Logic: Backdate start time if arrest time is provided
+            const now = new Date();
+            if (arrestTimeStr) {
+                const [hours, mins] = arrestTimeStr.split(':');
+                const arrestTime = new Date();
+                arrestTime.setHours(hours, mins, 0, 0);
+                
+                // Handle midnight crossing (if arrest time is > now, assume it happened yesterday)
+                if (arrestTime > now) {
+                    arrestTime.setDate(arrestTime.getDate() - 1);
+                }
+                state.startTime = arrestTime;
+            } else {
+                state.startTime = now;
+            }
+
             startTotalTimer();
 
-            addLog(`${state.mode} Patient arrived in arrest.`);
-            if (cycles > 0) addLog(`[PRE-ARRIVAL] ${cycles} cycles completed.`);
-            if (shocks > 0) addLog(`[PRE-ARRIVAL] ${shocks} shocks delivered.`);
-            
-            if (adrenaline > 0) {
-                state.counts.adrenaline = adrenaline;
-                addLog(`[PRE-ARRIVAL] ${adrenaline} Adrenaline recorded.`);
-            }
-            if (amiodarone > 0) {
-                state.counts.amiodarone = amiodarone;
-                addLog(`[PRE-ARRIVAL] ${amiodarone} Amiodarone recorded.`);
-            }
-
+            // 3. Update Counts
             state.cycleCount = cycles;
             state.shocksDelivered = shocks;
             state.counts.shocks = shocks;
+            state.counts.adrenaline = adrenaline;
+            state.counts.amiodarone = amiodarone;
+            state.counts.fluids = fluids;
+
+            // 4. Logging
+            addLog(`${state.mode} Patient arrival / Handover accepted.`);
             
+            if (arrestTimeStr) addLog(`[HISTORY] Reported Arrest Time: ${arrestTimeStr}`);
+            if (alsTimeStr) addLog(`[HISTORY] ALS Start Time: ${alsTimeStr}`);
+            
+            if (cycles > 0) addLog(`[HISTORY] ${cycles} cycles completed prior to arrival.`);
+            if (shocks > 0) addLog(`[HISTORY] ${shocks} shocks delivered prior to arrival.`);
+            
+            const drugLog = [];
+            if (adrenaline > 0) drugLog.push(`${adrenaline} Adrenaline`);
+            if (amiodarone > 0) drugLog.push(`${amiodarone} Amiodarone`);
+            if (fluids > 0) drugLog.push(`${fluids} Fluid Bolus`);
+            
+            if (drugLog.length > 0) {
+                addLog(`[HISTORY] Drugs given: ${drugLog.join(', ')}.`);
+            }
+
+            // 5. Move to Next Step
             state.currentStep = 'ASSESS_RHYTHM';
             updateUI();
         };
@@ -1226,69 +1282,7 @@
                         <div><strong>Weight:</strong> ${state.patientWeight}kg | <strong>Age:</strong> ${state.patientAge} years</div>
                         <div><strong>Energy:</strong> ${state.wetflag.energy}J | <strong>Adrenaline:</strong> ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)</div>
                         <div><strong>Amiodarone:</strong> ${state.wetflag.amiodarone}mg | <strong>Fluid:</strong> ${state.wetflag.fluids}ml | <strong>Glucose:</strong> ${state.wetflag.glucose}ml</div>
-                        <div><strong>ETT:</strong> Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm</div>
-                    </div>
-                 </div>
-                ` : ''}
-                
-                ${state.mode === 'NEO' && state.patientWeight ? `
-                 <div class="border-t border-slate-200 pt-4 mb-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Patient Info (Neonatal)</h3>
-                    <div class="text-sm text-slate-600 space-y-1">
-                        <div><strong>Weight:</strong> ${state.patientWeight}kg</div>
-                        <div><strong>Adrenaline:</strong> ${Math.round(state.patientWeight * 20)}mcg (${(state.patientWeight * 0.2).toFixed(2)}ml 1:10k) | <strong>Fluid:</strong> ${Math.round(state.patientWeight * 10)}ml</div>
-                        <div><strong>Glucose:</strong> ${Math.round(state.patientWeight * 2)}ml (10%) | <strong>ETT:</strong> ${state.patientWeight < 1 ? 2.5 : (state.patientWeight < 2 ? 3.0 : 3.5)}mm @ ${state.patientWeight < 1 ? 7 : (state.patientWeight < 2 ? 8 : (state.patientWeight < 3 ? 9 : 10))}cm</div>
-                    </div>
-                 </div>
-                ` : ''}
-
-                <div class="border-t border-slate-200 pt-4">
-                    <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
-                    <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
-                        ${state.log.map(l => `<div class="mb-1"><span class="text-slate-400">[${l.time.toLocaleTimeString()}]</span> ${l.message}</div>`).join('')}
-                    </div>
-                </div>
-             `;
-             
-             summaryContent.innerHTML = html;
-             summaryModal.classList.remove('hidden');
-        };
-        
-        window.closeSummary = () => {
-             summaryModal.classList.add('hidden');
-        };
-        
-        // MODIFIED: Combined Copy Function
-        window.copyFullRecord = () => {
-            // 1. Generate Log Text
-            let logText = `RESUSCITATION EVENT LOG\nStart Time: ${formatDateTime(state.startTime)}\n\n`;
-            state.log.forEach(l => {
-                logText += `[${l.time.toLocaleTimeString()}] ${l.message}\n`;
-            });
-
-            // 2. Generate Summary Text
-            const duration = state.startTime && state.endTime 
-                ? formatTime(Math.floor((state.endTime - state.startTime) / 1000)) 
-                : (state.startTime ? formatTime(Math.floor((new Date() - state.startTime) / 1000)) : "00:00");
-            
-            let summaryText = `RESUSCITATION SUMMARY\n`;
-            summaryText += `Outcome: ${state.endTime ? (state.currentStep === 'POST_ROSC' ? 'ROSC Achieved' : 'Ended') : 'Ongoing'}\n`;
-            summaryText += `Total Duration: ${duration}\n`;
-            summaryText += `Start: ${formatDateTime(state.startTime)} | End: ${formatDateTime(state.endTime)}\n`;
-            summaryText += `Cycles: ${state.cycleCount} | Shocks: ${state.counts.shocks}\n\n`;
-            summaryText += `TOTALS:\n`;
-            summaryText += `- Adrenaline: ${state.counts.adrenaline}\n`;
-            summaryText += `- Amiodarone: ${state.counts.amiodarone}\n`;
-            summaryText += `- Fluids: ${state.counts.fluids}\n`;
-            summaryText += `- Airway: ${state.counts.sga > 0 ? 'SGA (' + state.counts.sga + ') ' : ''}${state.counts.ett > 0 ? 'ETT (' + state.counts.ett + ')' : ''}\n`;
-            summaryText += `- Access: ${state.counts.access}\n`;
-            
-            if (state.wetflag) {
-                summaryText += `\nPATIENT INFO (Paediatric - WETFLAG):\n`;
-                summaryText += `Weight: ${state.patientWeight}kg | Age: ${state.patientAge} years\n`;
-                summaryText += `Energy: ${state.wetflag.energy}J | Adrenaline: ${state.wetflag.adrenaline_mcg}mcg (${state.wetflag.adrenaline_vol}ml 1:10k)\n`;
-                summaryText += `Amiodarone: ${state.wetflag.amiodarone}mg | Fluid: ${state.wetflag.fluids}ml | Glucose: ${state.wetflag.glucose}ml\n`;
-                summaryText += `ETT: Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
+                        <div><strong>ETT:</strong> Uncuffed ${state.wetflag.tube_uncuffed.toFixed(1)}mm @ ${(state.wetflag.tube_uncuffed * 3).toFixed(1)}cm | Cuffed ${state.wetflag.tube_cuffed.toFixed(1)}mm\n`;
             }
             if (state.mode === 'NEO' && state.patientWeight) {
                 const w = state.patientWeight;
