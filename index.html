@@ -38,6 +38,20 @@
         /* Disabled inputs */
         input[type="checkbox"]:disabled + label { text-decoration: line-through; color: #64748b; }
 
+        /* Mobile responsiveness: stack columns below 900px, prevent horizontal overflow */
+        html, body { overflow-x: hidden; }
+        @media (max-width: 900px) {
+            #app-container { flex-direction: column !important; }
+            #app-container > div { width: 100% !important; margin-left: 0 !important; }
+            #app-container > div:last-child { height: auto !important; min-height: 60vh; }
+            #timer-container { position: static !important; }
+        }
+        @media (max-width: 480px) {
+            #cpr-cycle-timer-large { font-size: 4.5rem !important; }
+            #total-elapsed-time { font-size: 1.5rem; }
+            #cpr-cycle-timer-small { font-size: 2rem; }
+        }
+
         /* Print styles */
         @media print {
             body * { visibility: hidden; }
@@ -261,11 +275,24 @@
             roscTime: null,
             rearrestTime: null,
             isRearrestActive: false,
+            lastAdrenalineTime: null,
+            reversiblesTreated: {},
+            reversiblesLikely: {},
+            specialCircs: {},
             // Paeds/Neo Specific
             patientWeight: 0,
             patientAge: 0,
             wetflag: null
         };
+
+        // --- Special Circumstances Data (RCUK 2025) ---
+        const specialCircumstances = [
+            { id: 'hypothermia', name: 'Hypothermia', guidance: '< 30°C: max 3 shocks, withhold drugs. 30–35°C: double drug intervals. Active rewarming.' },
+            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. Perimortem caesarean at 4 min if uterus ≥20 weeks and no ROSC. Call obstetric + neonatal teams.' },
+            { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.' },
+            { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.' },
+            { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.' }
+        ];
 
         // --- Timers & Metronome ---
         let totalElapsedInterval = null;
@@ -495,14 +522,14 @@
 
             // Standard Buttons (Airway Split + Access)
             html += `
-                <button data-intervention="airway_sga" class="relative w-full ${airwayClass(state.counts.sga > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
+                <button data-intervention="airway_sga" data-drug-name="Airway (SGA/iGel)" class="relative w-full ${airwayClass(state.counts.sga > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
                     Airway (SGA/iGel) ${airwayStatus(state.counts.sga > 0)}
                 </button>
-                <button data-intervention="airway_ett" class="relative w-full ${airwayClass(state.counts.ett > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
+                <button data-intervention="airway_ett" data-drug-name="Airway (ETT)" class="relative w-full ${airwayClass(state.counts.ett > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border">
                     Airway (ETT) ${airwayStatus(state.counts.ett > 0)}
                 </button>
                 <div class="col-span-2">
-                     <button data-intervention="access" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
+                     <button data-intervention="access" data-drug-name="IV/IO Access" class="relative w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-2 rounded-lg shadow-sm text-xs border border-slate-300">
                         IV/IO Access Secured ${badge(state.counts.access)}
                      </button>
                 </div>
@@ -511,51 +538,64 @@
             // Dynamic Buttons
             if (state.mode === 'ADULT') {
                  html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                    <button data-drug="adrenaline" data-drug-name="Adrenaline 1mg" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
                         Adrenaline 1mg ${badge(state.counts.adrenaline)}
                     </button>
-                    <button data-drug="amiodarone" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                    <button data-drug="amiodarone" data-drug-name="Amiodarone" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
                         Amiodarone ${badge(state.counts.amiodarone)}
                         <span class="block text-[10px] opacity-80 font-normal">300mg / 150mg</span>
                     </button>
-                    <button data-drug="fluids" class="relative col-span-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
+                    <button data-drug="fluids" data-drug-name="Fluid 500ml" class="relative col-span-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm transition-all transform active:scale-95">
                         Fluid 500ml ${badge(state.counts.fluids)}
                     </button>
                  `;
             } else if (state.mode === 'PAEDS' && state.wetflag) {
                  const wf = state.wetflag;
                  html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="adrenaline" data-drug-name="Adrenaline ${wf.adrenaline_mcg}mcg (${wf.adrenaline_vol}ml 1:10,000)" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Adrenaline ${wf.adrenaline_mcg}mcg</span>
                         <span class="text-[10px] font-normal opacity-90">(${wf.adrenaline_vol}ml of 1:10k)</span>
                         ${badge(state.counts.adrenaline)}
                     </button>
-                    <button data-drug="amiodarone" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="amiodarone" data-drug-name="Amiodarone ${wf.amiodarone}mg (5mg/kg)" class="relative w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                          <span>Amiodarone ${wf.amiodarone}mg</span>
                          ${badge(state.counts.amiodarone)}
                     </button>
-                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="fluids" data-drug-name="Fluid ${wf.fluids}ml (20ml/kg 0.9% saline / Hartmann's)" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Fluid ${wf.fluids}ml</span>
+                        <span class="text-[10px] font-normal opacity-90">(20ml/kg)</span>
                         ${badge(state.counts.fluids)}
                     </button>
-                    <button data-drug="glucose" class="relative w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="glucose" data-drug-name="Glucose ${wf.glucose}ml (10%)" class="relative w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Glucose ${wf.glucose}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(10%)</span>
                         ${badge(state.counts.glucose)}
                     </button>
                  `;
+            } else if (state.mode === 'PAEDS') {
+                 // No weight set yet — provide inline weight entry so drug buttons can render.
+                 html += `
+                    <div class="col-span-2 text-center text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-lg p-3">
+                        <p class="font-semibold mb-2">Enter weight for weight-based drug doses</p>
+                        <div class="flex space-x-2 justify-center">
+                            <input type="number" id="paeds-drug-weight" placeholder="Weight (kg)" step="0.1" class="p-2 border rounded w-28 text-center text-slate-900">
+                            <button type="button" onclick="updatePaedsCalc(document.getElementById('paeds-drug-weight').value, 'weight')" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-3 rounded shadow">Set</button>
+                        </div>
+                    </div>
+                 `;
             } else if (state.mode === 'NEO') {
                  const w = state.patientWeight || 3.5;
                  const adrVol = (w * 0.2).toFixed(2); // 20mcg/kg
+                 const adrMcg = Math.round(w * 20);
                  const fluid = Math.round(w * 10);
-                 
+
                  html += `
-                    <button data-drug="adrenaline" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="adrenaline" data-drug-name="Adrenaline ${adrMcg}mcg (${adrVol}ml 1:10,000)" class="relative w-full bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Adrenaline ${adrVol}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(1:10,000)</span>
                         ${badge(state.counts.adrenaline)}
                     </button>
-                    <button data-drug="fluids" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
+                    <button data-drug="fluids" data-drug-name="Fluid ${fluid}ml (0.9% saline / O-neg)" class="relative w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-2 rounded-lg shadow-sm text-sm flex flex-col items-center transition-all transform active:scale-95">
                         <span>Fluid ${fluid}ml</span>
                         <span class="text-[10px] font-normal opacity-90">(Saline / O-)</span>
                         ${badge(state.counts.fluids)}
@@ -689,6 +729,7 @@
                             <button id="deliver-shock-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-8 px-4 rounded-xl text-2xl shadow-xl flex items-center justify-center animate-pulse">
                                 <i data-lucide="zap" class="lucide w-8 h-8 mr-2"></i> Deliver Shock ${state.shocksDelivered + 1}
                             </button>
+                            <p class="text-xs text-slate-500 mt-4 max-w-md mx-auto">Pad placement (RCUK 2025): sternal pad below right clavicle; lateral pad mid-axillary line, directly under the armpit (V6 position).</p>
                         </div>`;
                     break;
                 case 'PERFORMING_CPR':
@@ -870,15 +911,18 @@
                     state.patientAge = val;
                     state.patientWeight = wf.weight;
                     state.wetflag = wf;
-                    document.getElementById('input-weight').value = wf.weight;
+                    const wInput = document.getElementById('input-weight');
+                    if (wInput) wInput.value = wf.weight;
                 }
             } else {
-                state.patientWeight = parseFloat(val);
-                state.wetflag = generateWetflagFromWeight(state.patientWeight);
+                const parsed = parseFloat(val);
+                if (isNaN(parsed) || parsed <= 0) return;
+                state.patientWeight = parsed;
+                state.wetflag = generateWetflagFromWeight(state.patientWeight, parseFloat(state.patientAge) || 0);
             }
-            
+
             const resDiv = document.getElementById('wetflag-results');
-            if (state.wetflag) {
+            if (state.wetflag && resDiv) {
                 const wf = state.wetflag;
                 const tubeDepth = (wf.tube_uncuffed * 3).toFixed(1);
                 resDiv.classList.remove('hidden');
@@ -891,9 +935,9 @@
                         <div><strong>ETT:</strong> Uncuffed ${wf.tube_uncuffed.toFixed(1)}mm @ ${tubeDepth}cm | Cuffed ${wf.tube_cuffed.toFixed(1)}mm</div>
                     </div>
                 `;
-                renderInterventionButtons(); // Update buttons immediately
-                updatePatientInfoDisplay(); // Update display immediately
             }
+            renderInterventionButtons(); // Update buttons immediately
+            updatePatientInfoDisplay(); // Update display immediately
         };
 
         window.updateNeoWeight = (val) => {
@@ -931,14 +975,18 @@
         const handleStartArrest = () => {
             state = {
                 ...state, 
-                isArrestActive: true, 
+                isArrestActive: true,
                 currentStep: 'ASSESS_RHYTHM',
-                startTime: new Date(), 
+                startTime: new Date(),
                 endTime: null,
-                log: [], 
+                log: [],
                 algorithmPath: null,
                 shocksDelivered: 0,
                 cycleCount: 0,
+                lastAdrenalineTime: null,
+                reversiblesTreated: {},
+                reversiblesLikely: {},
+                specialCircs: {},
                 counts: {
                     adrenaline: 0,
                     amiodarone: 0,
@@ -952,7 +1000,9 @@
             };
             addLog(`${state.mode} Cardiac arrest started.`);
             if (state.patientWeight) addLog(`Weight: ${state.patientWeight}kg`);
-            
+
+            populateReversible();
+            renderSpecialCircs();
             startTotalTimer();
             updateUI();
         };
@@ -1009,8 +1059,8 @@
         const handleDeliverShock = () => {
             state.shocksDelivered++;
             state.counts.shocks++;
-            const energy = state.wetflag ? `(${state.wetflag.energy}J)` : '';
-            addLog(`Shock ${state.shocksDelivered} delivered ${energy}.`);
+            const energy = state.wetflag ? ` (${state.wetflag.energy}J)` : '';
+            addLog(`Shock ${state.shocksDelivered} delivered${energy}.`);
             handleStartCpr();
         };
 
@@ -1068,6 +1118,9 @@
             document.body.classList.remove('flash-active');
             state.isCprInProgress = false;
             state.currentStep = 'ASSESS_RHYTHM';
+            // Reset the 2-min countdown so the next cycle starts fresh
+            cycleTimerValue = cycleDuration;
+            cprCycleTimerSmall.textContent = formatTime(cycleDuration);
             addLog('Manual Rhythm Check: Compressions Paused.');
             updateUI();
         };
@@ -1080,24 +1133,40 @@
 
     clearInterval(totalElapsedInterval);
             clearInterval(cycleTimerInterval);
+            totalElapsedInterval = null;
+            cycleTimerInterval = null;
             document.body.classList.remove('flash-active');
             state.isArrestActive = false;
             state.isCprInProgress = false;
+            state.isRearrestActive = false;
             state.currentStep = 'START';
             state.shocksDelivered = 0;
             state.cycleCount = 0;
             state.startTime = null;
             state.endTime = null;
+            state.roscTime = null;
+            state.rearrestTime = null;
+            state.lastAdrenalineTime = null;
             state.patientWeight = 0;
             state.patientAge = 0;
             state.wetflag = null;
+            state.reversiblesTreated = {};
+            state.reversiblesLikely = {};
+            state.specialCircs = {};
             state.counts = { adrenaline: 0, amiodarone: 0, fluids: 0, glucose: 0, access: 0, sga: 0, ett: 0, shocks: 0 };
-            
+
             if(clearLog) state.log = [];
+            cycleTimerValue = cycleDuration;
             totalElapsedTimeElem.innerText = "00:00";
-            cprCycleTimerSmall.innerText = "02:00";
+            rearrestTimeElem.textContent = "00:00";
+            initialArrestTimeElem.textContent = "00:00";
+            cprCycleTimerSmall.innerText = formatTime(cycleDuration);
             document.getElementById('handover-notes').value = '';
-            
+
+            // Rebuild interactive panels so checkboxes/toggles return to a clean slate
+            populateReversible();
+            renderSpecialCircs();
+
             closeSummary();
             updateUI();
         };
@@ -1242,6 +1311,42 @@
                  </div>
                 ` : ''}
 
+                ${(() => {
+                    const treated = Object.keys(state.reversiblesTreated);
+                    const likely = Object.keys(state.reversiblesLikely);
+                    if (!treated.length && !likely.length) return '';
+                    return `
+                    <div class="border-t border-slate-200 pt-4 mb-4">
+                        <h3 class="font-bold text-slate-700 mb-2">Reversible Causes</h3>
+                        <div class="text-sm text-slate-600 space-y-1">
+                            ${likely.length ? `<div><strong>Likely:</strong> ${likely.join(', ')}</div>` : ''}
+                            ${treated.length ? `<div><strong>Treated:</strong> ${treated.join(', ')}</div>` : ''}
+                        </div>
+                    </div>`;
+                })()}
+
+                ${(() => {
+                    const active = specialCircumstances.filter(sc => state.specialCircs[sc.id]);
+                    if (!active.length) return '';
+                    return `
+                    <div class="border-t border-slate-200 pt-4 mb-4">
+                        <h3 class="font-bold text-slate-700 mb-2">Special Circumstances</h3>
+                        <div class="text-sm text-slate-600 space-y-1">
+                            ${active.map(sc => `<div><strong>${sc.name}:</strong> ${sc.guidance}</div>`).join('')}
+                        </div>
+                    </div>`;
+                })()}
+
+                ${(() => {
+                    const notes = (document.getElementById('handover-notes').value || '').trim();
+                    if (!notes) return '';
+                    return `
+                    <div class="border-t border-slate-200 pt-4 mb-4">
+                        <h3 class="font-bold text-slate-700 mb-2">Handover / Notes</h3>
+                        <div class="text-sm text-slate-600 whitespace-pre-wrap">${notes.replace(/</g, '&lt;')}</div>
+                    </div>`;
+                })()}
+
                 <div class="border-t border-slate-200 pt-4">
                     <h3 class="font-bold text-slate-700 mb-2">Event Log</h3>
                     <div class="bg-slate-50 p-2 rounded border border-slate-200 h-40 overflow-y-auto text-xs font-mono">
@@ -1249,7 +1354,7 @@
                     </div>
                 </div>
              `;
-             
+
              summaryContent.innerHTML = html;
              summaryModal.classList.remove('hidden');
         };
@@ -1298,6 +1403,28 @@
                 summaryText += `Glucose: ${Math.round(w * 2)}ml (10%) | ETT: ${w < 1 ? 2.5 : (w < 2 ? 3.0 : 3.5)}mm @ ${w < 1 ? 7 : (w < 2 ? 8 : (w < 3 ? 9 : 10))}cm\n`;
             }
             
+            // Reversible Causes
+            const treated = Object.keys(state.reversiblesTreated);
+            const likely = Object.keys(state.reversiblesLikely);
+            if (treated.length || likely.length) {
+                summaryText += `\nREVERSIBLE CAUSES:\n`;
+                if (likely.length) summaryText += `- Likely: ${likely.join(', ')}\n`;
+                if (treated.length) summaryText += `- Treated: ${treated.join(', ')}\n`;
+            }
+
+            // Special Circumstances
+            const activeCircs = specialCircumstances.filter(sc => state.specialCircs[sc.id]);
+            if (activeCircs.length) {
+                summaryText += `\nSPECIAL CIRCUMSTANCES:\n`;
+                activeCircs.forEach(sc => { summaryText += `- ${sc.name}: ${sc.guidance}\n`; });
+            }
+
+            // Handover / Notes
+            const notes = (document.getElementById('handover-notes').value || '').trim();
+            if (notes) {
+                summaryText += `\nHANDOVER / NOTES:\n${notes}\n`;
+            }
+
             // 3. Combine
             const fullText = logText + "\n" + "=".repeat(20) + "\n\n" + summaryText;
 
@@ -1350,7 +1477,7 @@
                      
                      if (state.counts[drugName] > 0) {
                          state.counts[drugName]--;
-                         addLog(`Correction: ${button.innerText.split('\n')[0].trim()} count reduced`);
+                         addLog(`Correction: ${button.dataset.drugName || drugName} count reduced`);
                          
                          // Check if this was an airway removal that affects guidance
                          if ((drugName === 'sga' && state.counts.sga === 0) || (drugName === 'ett' && state.counts.ett === 0)) {
@@ -1365,28 +1492,56 @@
              const button = e.target.closest('button');
              if (!button || button.disabled) return;
              
-             // Count Logic
+             // Count Logic (canonical name read from data-drug-name, never button text)
              if (button.dataset.drug) {
                  const drug = button.dataset.drug;
+                 let drugName = button.dataset.drugName || drug;
+
+                 // Amiodarone dose sequencing (Adult): 1st = 300mg, 2nd+ = 150mg
+                 if (drug === 'amiodarone' && state.mode === 'ADULT') {
+                     drugName = state.counts.amiodarone === 0 ? 'Amiodarone 300mg' : 'Amiodarone 150mg';
+                 }
+
                  if (state.counts[drug] !== undefined) state.counts[drug]++;
-                 
-                 const text = button.querySelector('span') ? button.querySelector('span').innerText : button.innerText;
-                 addLog(`${text} Given`);
+
+                 // Adrenaline interval warning (non-blocking)
+                 if (drug === 'adrenaline') {
+                     const now = new Date();
+                     let tooSoon = false, gap = 0;
+                     if (state.lastAdrenalineTime) {
+                         gap = Math.floor((now - state.lastAdrenalineTime) / 1000);
+                         if (gap < 180) tooSoon = true;
+                     }
+                     state.lastAdrenalineTime = now;
+                     addLog(`${drugName} Given`);
+                     if (tooSoon) {
+                         addLog(`⚠ Adrenaline given ${formatTime(gap)} since last dose — recommended interval 3–5 min`);
+                         renderInterventionButtons();
+                         const fresh = interventionsButtonsGrid.querySelector('button[data-drug="adrenaline"]');
+                         if (fresh) {
+                             fresh.classList.add('ring-4', 'ring-amber-400');
+                             setTimeout(() => fresh.classList.remove('ring-4', 'ring-amber-400'), 1200);
+                         }
+                         return;
+                     }
+                 } else {
+                     addLog(`${drugName} Given`);
+                 }
              }
-             
+
              if (button.dataset.intervention) {
                  const intv = button.dataset.intervention;
                  let needsGuidanceUpdate = false;
-                 
+
                  // Handle split airway toggles
                  if (intv === 'airway_sga') {
                      // Toggle logic
                      if (state.counts.sga > 0) {
                          state.counts.sga = 0;
-                         addLog(`Airway (SGA) Removed/Inactive`);
+                         addLog(`Airway (SGA/iGel) Removed/Inactive`);
                      } else {
                          state.counts.sga = 1;
-                         addLog(`Airway (SGA) Inserted`);
+                         addLog(`Airway (SGA/iGel) Inserted`);
                      }
                      needsGuidanceUpdate = true;
                  }
@@ -1403,9 +1558,9 @@
                  }
                  else if (intv === 'access') {
                      state.counts.access++;
-                     addLog(`${button.innerText.split(' ')[0]} Access Recorded`);
+                     addLog(`IV/IO Access Recorded`);
                  }
-                 
+
                  if (needsGuidanceUpdate && state.currentStep === 'PERFORMING_CPR') {
                      renderGuidance();
                  }
@@ -1468,7 +1623,15 @@
         
         copyLogBtn.addEventListener('click', () => {
              const text = state.log.map(l => `[${l.time.toLocaleTimeString()}] ${l.message}`).join('\n');
-             navigator.clipboard.writeText(text).then(() => alert("Log Copied"));
+             navigator.clipboard.writeText(text).then(() => {
+                 const original = copyLogBtn.innerHTML;
+                 copyLogBtn.innerHTML = `<i data-lucide="check" class="lucide-sm"></i> <span class="hidden sm:inline">Copied!</span>`;
+                 lucide.createIcons();
+                 setTimeout(() => {
+                     copyLogBtn.innerHTML = original;
+                     lucide.createIcons();
+                 }, 1500);
+             }).catch(() => alert("Clipboard access failed. Please copy manually."));
         });
         
         // Populate Reversible Causes
@@ -1485,37 +1648,75 @@
                 <div class="grid grid-cols-6 gap-2 items-center text-sm py-1 border-b border-slate-50">
                     <div class="col-span-4 font-medium text-slate-700">${item.name}</div>
                     <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500" 
-                               onchange="addLog(this.checked ? 'Cause Treated: ${item.name}' : 'Cause Untreated: ${item.name}')">
+                        <input type="checkbox" ${state.reversiblesTreated[item.name] ? 'checked' : ''} class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-green-500"
+                               onchange="handleTreatedCause('${item.name}', this.checked)">
                     </div>
                     <div class="flex justify-center">
-                        <input type="checkbox" class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500" 
+                        <input type="checkbox" ${state.reversiblesLikely[item.name] ? 'checked' : ''} class="w-5 h-5 rounded border-gray-300 text-red-600 focus:ring-red-500"
                                onchange="handleLikelyCause('${item.name}', this.checked)">
                     </div>
                 </div>
              `).join('');
              container.innerHTML = html;
         };
-        
+
+        window.handleTreatedCause = (name, isChecked) => {
+             if (isChecked) state.reversiblesTreated[name] = true; else delete state.reversiblesTreated[name];
+             addLog(isChecked ? `Cause Treated: ${name}` : `Cause Untreated: ${name}`);
+        };
+
         window.handleLikelyCause = (name, isChecked) => {
+             if (isChecked) state.reversiblesLikely[name] = true; else delete state.reversiblesLikely[name];
              addLog(isChecked ? `Likely Cause identified: ${name}` : `Likely Cause deselected: ${name}`);
         };
-        
+
         populateReversible();
 
-        // Populate Special Circs
-        specialCircsContent.innerHTML = `
-            <div class="prose prose-sm max-w-none text-slate-700">
-                <h3 class="font-bold text-lg mb-2">Special Circumstances (RCUK 2025)</h3>
-                <ul class="list-disc list-inside space-y-2">
-                    <li><strong>Hypothermia:</strong> < 30°C: Max 3 shocks, no drugs. 30-35°C: Double drug intervals.</li>
-                    <li><strong>Pregnancy:</strong> Manual uterine displacement (Left). Deliver < 4 mins if no ROSC.</li>
-                    <li><strong>Toxins:</strong> Consult Toxbase. Consider specific antidotes.</li>
-                    <li><strong>Anaphylaxis:</strong> Aggressive fluids. Early adrenaline.</li>
-                    <li><strong>Asthma:</strong> Low rate, high expiratory time. Check for tension pneumothorax.</li>
-                </ul>
-            </div>
-        `;
+        // Populate Special Circs (interactive toggles)
+        const renderSpecialCircs = () => {
+            const cards = specialCircumstances.map(sc => {
+                const active = !!state.specialCircs[sc.id];
+                const cardClass = active
+                    ? 'bg-amber-50 border-amber-400 ring-1 ring-amber-400'
+                    : 'bg-white border-slate-200 hover:bg-slate-50';
+                return `
+                    <button type="button" data-circ="${sc.id}" class="special-circ-card w-full text-left p-3 rounded-lg border ${cardClass} transition-colors">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-700">${sc.name}</span>
+                            ${active ? '<span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ACTIVE</span>' : '<span class="text-xs text-slate-400">Tap to activate</span>'}
+                        </div>
+                        ${active ? `<p class="text-sm text-slate-600 mt-2 leading-snug break-words">${sc.guidance}</p>` : ''}
+                    </button>
+                `;
+            }).join('');
+            specialCircsContent.innerHTML = `
+                <div class="text-slate-700">
+                    <h3 class="font-bold text-lg mb-1">Special Circumstances (RCUK 2025)</h3>
+                    <p class="text-xs text-slate-500 mb-3">Tap to mark active — logs an event and adds to the record.</p>
+                    <div class="space-y-2">${cards}</div>
+                </div>
+            `;
+        };
+
+        window.toggleSpecialCirc = (id) => {
+            const sc = specialCircumstances.find(s => s.id === id);
+            if (!sc) return;
+            if (state.specialCircs[id]) {
+                delete state.specialCircs[id];
+                addLog(`Special Circumstance cleared: ${sc.name}`);
+            } else {
+                state.specialCircs[id] = true;
+                addLog(`Special Circumstance: ${sc.name}`);
+            }
+            renderSpecialCircs();
+        };
+
+        specialCircsContent.addEventListener('click', (e) => {
+            const card = e.target.closest('.special-circ-card');
+            if (card) toggleSpecialCirc(card.dataset.circ);
+        });
+
+        renderSpecialCircs();
 
         // Start metronome
         metronomeBtn.addEventListener('click', async () => {
