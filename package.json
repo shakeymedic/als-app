@@ -1,0 +1,13 @@
+{
+  "name": "als-app",
+  "private": true,
+  "description": "Resuscitation Assist (RCUK ALS/PLS/NLS) - build tooling only; the app itself is static HTML.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tools/test.mjs"
+  },
+  "devDependencies": {
+    "lucide": "1.48.0",
+    "tailwindcss": "3.4.19"
+  }
+}
