@@ -236,6 +236,66 @@ for (const file of FILES) {
   await p.click('#add-intervention-btn');
   check((await p.locator('#log-content').innerHTML()).includes('&lt;b&gt;K+'), 'notes are HTML-escaped');
 
+  // --- Countdown to the rhythm / pulse check: spoken countdown, beeps and full-screen flash
+  p = await fresh();
+  await p.evaluate(() => { window.__said = []; voice.say = t => window.__said.push(t); });
+  await p.click('#start-arrest-btn'); await p.click('#rhythm-pea-btn');
+  const flash = () => p.evaluate(() => document.getElementById('check-flash').className);
+  await p.clock.runFor(100000);
+  check(!(await flash()).match(/warn|count|now/) && await p.isHidden('#check-banner'), 'no countdown alert early in the cycle');
+  await p.clock.runFor(5300); // 14 s left
+  check((await flash()).includes('warn') && (await text(p, '#check-banner-title')).includes('RHYTHM / PULSE CHECK IN'), 'amber warning 15 s before the check', await flash());
+  await p.clock.runFor(5000); // 9 s left
+  check((await flash()).includes('count'), 'red flashing in the last 10 s');
+  await p.clock.runFor(10000);
+  check((await flash()).includes('now') && (await text(p, '#check-banner-title')).includes('CHECK RHYTHM NOW'), 'flash + "check rhythm now" when the cycle ends');
+  let said = await p.evaluate(() => window.__said);
+  check(said[0].startsWith('Rhythm and pulse check in 15 seconds') && ['10', '5', '4', '3', '2', '1'].every(n => said.includes(n)) && said.at(-1).includes('Check rhythm now'), 'spoken countdown 15, 10, 5-1 then "check rhythm now"', JSON.stringify(said));
+  await p.click('#rhythm-vf-btn');
+  check(!(await flash()).match(/warn|count|now/) && await p.isHidden('#check-banner'), 'alert clears once the rhythm is chosen');
+  await p.click('#deliver-shock-btn'); await p.clock.runFor(110000); await p.click('#rosc-btn');
+  check(!(await flash()).match(/warn|count|now/) && await p.isHidden('#check-banner'), 'alert clears on ROSC mid-countdown');
+  // sound off: still flashes, but silent; choice is remembered
+  await p.click('#rearrest-btn');
+  await p.click('#sound-btn');
+  check((await text(p, '#sound-btn')).includes('Off'), 'countdown sound can be turned off');
+  await p.evaluate(() => { window.__said = []; });
+  await p.click('#rhythm-asys-btn'); await p.clock.runFor(115000);
+  check((await flash()).includes('count') && (await p.evaluate(() => window.__said.length)) === 0, 'sound off: flash only, nothing spoken');
+  check(await p.evaluate(() => localStorage.getItem('resus-assist-sound')) === 'off', 'sound choice remembered');
+  check(p.errs.length === 0, 'no page errors (countdown)', p.errs.join(' | '));
+  // NLS: 5 s countdown to the heart-rate check
+  p = await fresh();
+  await p.evaluate(() => { localStorage.removeItem('resus-assist-sound'); });
+  p = await fresh();
+  await p.evaluate(() => { window.__said = []; voice.say = t => window.__said.push(t); });
+  await p.click('button[data-mode="NEO"]'); await p.click('#start-arrest-btn'); await p.click('#neo-inflation-btn'); await p.click('#neo-hr-lt60-btn');
+  await p.clock.runFor(24000);
+  check(!(await flash()).match(/warn|count/), 'NLS: no alert 6 s before the check');
+  await p.clock.runFor(2000);
+  check((await flash()).includes('count') && (await text(p, '#check-banner-title')).includes('HEART RATE CHECK IN'), 'NLS: flashing 5 s before the heart-rate check');
+  said = await p.evaluate(() => window.__said);
+  check(said[0] === 'Heart rate check in 5 seconds.', 'NLS: spoken heart-rate check warning', JSON.stringify(said));
+
+  // --- Laptop / PC screens: everything on one screen, no page scrolling
+  for (const [w, h] of [[1366, 768], [1920, 1080]]) {
+    p = await fresh({ width: w, height: h });
+    const fits = async () => S(p, () => document.documentElement.scrollHeight <= innerHeight + 1 &&
+      ['left-column', 'main-panel', 'right-column', 'content-area'].every(id => { const e = document.getElementById(id); return !e || e.scrollHeight <= e.clientHeight + 2; }));
+    await p.click('#start-arrest-btn');
+    check(await fits(), `${w}×${h}: rhythm check fits without scrolling`);
+    for (let i = 0; i < 3; i++) { await p.click('#rhythm-vf-btn'); await p.click('#deliver-shock-btn'); if (i < 2) await p.clock.runFor(121000); }
+    await p.click('button[data-intervention="airway_ett"]');
+    check(await fits(), `${w}×${h}: CPR with clinical actions fits without scrolling`);
+    await p.clock.runFor(121000); await p.click('#rhythm-asys-btn'); await p.click('#rosc-btn');
+    check(await fits(), `${w}×${h}: post-ROSC fits without scrolling`);
+    p = await fresh({ width: w, height: h });
+    await p.click('button[data-mode="PAEDS"]'); await p.fill('#input-age', '5'); await p.click('button[data-action="calc-age"]');
+    check(await fits(), `${w}×${h}: paediatric start screen fits`);
+    await p.click('#start-arrest-btn'); await p.click('#rhythm-asys-btn');
+    check(await fits(), `${w}×${h}: paediatric CPR fits`);
+  }
+
   // --- Mobile: rhythm buttons visible without scrolling
   p = await fresh({ width: 390, height: 844 });
   await p.click('#start-arrest-btn');
