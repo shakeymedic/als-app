@@ -115,6 +115,14 @@
             input, select { border: none !important; background: transparent !important; padding: 0 !important; }
         }
     </style>
+    <!-- Install as an app (PWA) -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#b91c1c">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-title" content="Resus Assist">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 </head>
 <body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
@@ -2214,5 +2222,6 @@
         refreshIcons();
         setInterval(tick, 250);
     </script>
+    <script src="sw-register.js"></script>
 </body>
 </html>
