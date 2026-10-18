@@ -3,7 +3,7 @@
 // always gets the latest version; the cached copy is only used when the network fails
 // or takes more than a few seconds. Fonts and libraries from other sites are served
 // from the cache and refreshed in the background.
-const CACHE = 'als-app-v1';
+const CACHE = 'als-app-v2';
 const PRECACHE = [
   "./",
   "index.html",
