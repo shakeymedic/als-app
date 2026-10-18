@@ -965,7 +965,7 @@
 
             html += `
                 <button data-intervention="airway_sga" class="relative w-full ${airwayClass(state.counts.sga > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-sm border">
-                    Airway (SGA/iGel) ${airwayStatus(state.counts.sga > 0)}
+                    Airway (SGA) ${airwayStatus(state.counts.sga > 0)}
                 </button>
                 <button data-intervention="airway_ett" class="relative w-full ${airwayClass(state.counts.ett > 0)} font-semibold py-2 px-2 rounded-lg shadow-sm text-sm border">
                     Airway (ETT) ${airwayStatus(state.counts.ett > 0)}
@@ -2052,7 +2052,7 @@
                 const intv = button.dataset.intervention;
                 if (intv === 'airway_sga' || intv === 'airway_ett') {
                     const k = intv === 'airway_sga' ? 'sga' : 'ett';
-                    const label = k === 'sga' ? 'Airway: SGA/i-gel' : 'Airway: ETT';
+                    const label = k === 'sga' ? 'Airway: SGA' : 'Airway: ETT';
                     if (state.counts[k] > 0) {
                         state.counts[k] = 0;
                         addLog(`${label} removed/inactive`, { type: 'airway', key: k });
