@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Resus Assist</string>
+    <string name="confirm_close">Close Resus Assist? The current record stays saved on this phone for 12 hours.</string>
+    <string name="close">Close</string>
+    <string name="stay">Stay</string>
+    <string name="no_app_for_link">No app on this phone can open that link</string>
+</resources>

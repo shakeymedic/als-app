@@ -29,3 +29,8 @@ Speech uses the browser's built-in voices, so it works offline. Browsers only al
 page, so if a record is restored after a reload the timer card shows **Tap here to turn sound on**. The
 **Countdown sound** button turns the sound off (the flash stays) and is remembered on the device.
 
+
+## Android app
+
+`android/` builds the Play Store app, which bundles `index.html` and its files so it works offline from the first
+launch, with spoken prompts and printing through Android. See [android/README.md](android/README.md).
