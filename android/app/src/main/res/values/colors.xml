@@ -1,0 +1,5 @@
+<resources>
+    <!-- From the web app's manifest (theme #b91c1c) -->
+    <color name="brand">#B91C1C</color>
+    <color name="ic_launcher_background">#B91C1C</color>
+</resources>
