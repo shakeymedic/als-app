@@ -61,6 +61,8 @@
            arrest starts, so the Controls card (and the footer) wait until it does. */
         @media (max-width: 1023px) {
             body.at-start #controls-panel, body.at-start footer { display: none; }
+            /* The disclaimer line costs the start screen its fit on the shortest phones; the footer says the same once the arrest starts. */
+            @media (max-height: 660px) { .start-disclaimer { display: none; } }
             body.at-start #main-panel { padding: 12px !important; }
         }
         @media (max-width: 480px) {
@@ -311,7 +313,7 @@
     </div>
 
     <footer class="mt-2 mb-3 text-center text-xs text-slate-400 no-print">
-        &copy; WMEBEM 2025. Made by Dr Jake Turner.
+        An aid for trained staff. Not a medical device. &copy; 2025 West Midlands Evidence Based Emergency Medicine Ltd (EM Evidence). Made by Dr Jake Turner.
     </footer>
 
     <script>
@@ -1059,6 +1061,7 @@
                                     <i data-lucide="ambulance" class="mr-2"></i> Patient Arrived in Arrest
                                 </button>` : ''}
                             </div>
+                            <p class="start-disclaimer mt-2 text-xs leading-tight text-slate-500 text-center">Aid for trained staff (RCUK 2025). Not a medical device; follow local protocols and clinical judgement.</p>
                         </div>`;
                     break;
                 }
