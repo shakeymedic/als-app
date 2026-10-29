@@ -57,7 +57,7 @@ Package name: `org.emevidence.resusassist`. Once published on Play it cannot cha
 
 ## Play Console answers
 
-Prepared from what the app does (checked 25 October 2026). Jake must confirm them before submitting, because
+Prepared from what the app does (checked 25 October 2026; health declaration, content rating and the smaller forms updated 29 October 2026). Jake must confirm them before submitting, because
 the developer is responsible for their accuracy.
 
 - **Privacy policy:** https://www.emevidence.org/privacy.html (the "Our apps" section covers this app).
@@ -66,12 +66,20 @@ the developer is responsible for their accuracy.
   cleared by New Patient or after 12 hours. Android backup is turned off for the app.
 - **Permissions:** none.
 - **App access:** all functionality is available without special access.
-- **Ads:** none. **Target audience:** 18 and over (healthcare professionals).
-- **Health apps declaration:** Medical. Choose the categories that match how it is presented: it prompts and
-  records a resuscitation attempt against the RCUK 2025 algorithms. The store listing and the app should make
-  clear it is an aid for trained staff and does not replace clinical judgement or local protocols.
-  Whether software like this counts as a medical device under UK MHRA rules has not been checked; take advice
-  before describing it as anything other than an educational or cognitive aid.
+- **Ads:** none. **Advertising ID:** no (no AD_ID permission, no ad or analytics SDK). **Target audience:** 18
+  and over (healthcare professionals); not designed for children.
+- **Content rating:** answer the questionnaire as a medical reference app. It names drugs and doses used in
+  resuscitation and describes cardiac arrest in clinical terms, so answer any question about drugs or medical
+  content honestly (it is clinical information, not drug use or misuse). No user interaction, no location
+  sharing, no purchases, no gambling.
+- **News app:** no. **Government app:** no. **Financial features:** none.
+- **Health apps declaration:** Medical, **Medical reference and education**, matching how the app and listing
+  present it: an aid for trained staff following the RCUK 2025 algorithms, not a medical device, not replacing
+  training, local protocols or clinical judgement (the footer, and the start screen on all but the shortest phones, say this). Don't tick
+  "Clinical decision support" or "Medical device apps" unless the intended purpose changes and the app has been
+  assessed under UK MHRA rules for software as a medical device. Whether the MHRA would see the dose and timer
+  features as a medical device has not been checked; take advice before marketing it as a clinical tool.
+- **Store listing:** text and graphics rules are in [play-listing.md](play-listing.md).
 - **Target API level:** 36, as Google Play needs for new apps and updates from 31 August 2026.
 - **16 KB page size:** not affected; the app has no native code of its own.
 - **Play Integrity API:** not used. The app has no server and no paid or protected content, so there is
