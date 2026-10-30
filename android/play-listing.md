@@ -15,7 +15,7 @@ in step. RCUK has not produced or endorsed the app, and its logo must not appear
 
 - **App name** (30 characters max): `Resus Assist: ALS, PLS and NLS` (30)
 - **Category:** Medical. **Contains ads:** no. **Free.**
-- **Contact email:** emevidence999@gmail.com. **Website:** https://www.emevidence.org
+- **Contact email:** hello@emevidence.org. **Website:** https://www.emevidence.org
 - **Privacy policy:** https://www.emevidence.org/privacy.html
 
 ## Short description (80 characters max)
