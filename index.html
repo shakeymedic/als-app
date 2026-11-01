@@ -400,14 +400,26 @@
             { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.',
                 kg: true,
                 paeds: () => `Adrenaline ${adrenalineDoseText()} every 8 min (6–10 min). Second dose of amiodarone (${state.wetflag ? `${paedsAmio2(state.wetflag)} mg; ` : ''}5 mg/kg, max 150 mg) after 8 min. Normal defibrillation interval (every 2 min). Rewarm: > 32 °C external rewarming; < 32 °C active external and internal rewarming, including extracorporeal techniques.` },
-            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.' },
-            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.' },
-            { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.' },
-            { id: 'trauma', name: 'Traumatic arrest', guidance: 'Treat reversible causes simultaneously: haemorrhage control & volume, oxygenation, bilateral thoracostomies (tension), resuscitative thoracotomy (tamponade). Compressions must not delay these.' },
-            { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.' },
-            { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.' },
-            { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.' },
-            { id: 'drowning', name: 'Drowning', guidance: 'Hypoxic arrest: prioritise oxygenation and ventilation (5 initial rescue breaths). Consider hypothermia.' }
+            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
+                paedsAdult: true },
+            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.',
+                kg: true,
+                paeds: () => `Cardiac arrest from severe hyperkalaemia (usually > 6.5–7 mmol/L): short-acting insulin ${kgDose(0.1, 'units', 10)} with 10% glucose ${kgDose(5, 'ml', 250)} as an IV bolus, then monitor potassium and glucose and give a glucose-containing infusion as needed. IV/IO short-acting beta2 agonist infusion, e.g. salbutamol ${kgDose(5, 'mcg')}. Do not use calcium in children in cardiac arrest. Consider extracorporeal potassium removal; consider ECPR.` },
+            { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.',
+                kg: true,
+                paeds: () => `Consider thrombolysis, e.g. IV alteplase ${kgRange(0.3, 0.5, 'mg', 50)} over 2 min; may be repeated after 15 min. Consider extracorporeal life support and surgical embolectomy if thrombolysis fails.` },
+            { id: 'trauma', name: 'Traumatic arrest', guidance: 'Treat reversible causes simultaneously: haemorrhage control & volume, oxygenation, bilateral thoracostomies (tension), resuscitative thoracotomy (tamponade). Compressions must not delay these.',
+                kg: true,
+                paeds: () => `Treat reversible causes (HOTT: Hypotension, Oxygenation, Tension pneumothorax, cardiac Tamponade) first or alongside compressions and adrenaline. Jaw thrust with minimal spinal movement; ventilate and intubate if competent. Stop external bleeding; fluid replacement with early blood products (haemorrhagic shock: minimise crystalloid boluses, max ${kgDose(20, 'ml')}). Tranexamic acid ${kgRange(15, 20, 'mg', 1000)} IV over 10 min if transfusion needed. Bilateral thoracostomies. Resuscitative thoracotomy (if competent) for tamponade.` },
+            { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.',
+                paeds: () => 'Standard PLS. Consult a regional or national poisons centre (e.g. Toxbase); give antidotes where available. Exclude reversible causes, including electrolyte abnormalities. Be prepared to continue resuscitation for a prolonged period. Consider ECPR if conventional CPR is failing.' },
+            { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.',
+                kg: true,
+                paeds: () => `Adrenaline IV/IO bolus, cardiac arrest dose: ${adrenalineDoseText()}. Aggressive fluid resuscitation: ${kgDose(10, 'ml')} boluses. Consider prolonged resuscitation / ECPR.` },
+            { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.',
+                paeds: () => 'Ventilate with 100% oxygen. Exclude tension pneumothorax (needle thoracocentesis). Consider extracorporeal life support in near-fatal asthma.' },
+            { id: 'drowning', name: 'Drowning', guidance: 'Hypoxic arrest: prioritise oxygenation and ventilation (5 initial rescue breaths). Consider hypothermia.',
+                paeds: () => 'Start with 5 rescue breaths; give 100% oxygen as soon as available and intubate if competent. Standard PLS with extra attention to reversing hypoxia and hypothermia. Consider ECPR if conventional CPR is failing.' }
         ];
 
         const reversibleCauses = [
@@ -466,6 +478,23 @@
         // Worked out from the weight so records saved by older versions still show them.
         const paedsEnergyMax = wf => Math.min(Math.round(wf.weight * 8), 360);
         const paedsAmio2 = wf => Math.min(Math.round(wf.weight * 5), 150);
+
+        // Weight-based doses for the paediatric Special Circs cards: "2 units (0.1 units/kg, max 10 units)";
+        // without a weight only the per-kg dose is shown.
+        const fmtDose = v => v < 1 ? +v.toFixed(2) : (v < 10 ? +v.toFixed(1) : Math.round(v));
+        const kgDose = (perKg, unit, max = null) => {
+            const w = state.wetflag ? state.wetflag.weight : null;
+            const per = `${perKg} ${unit}/kg${max !== null ? `, max ${max} ${unit}` : ''}`;
+            if (!w) return per;
+            return `${fmtDose(max !== null ? Math.min(w * perKg, max) : w * perKg)} ${unit} (${per})`;
+        };
+        const kgRange = (lo, hi, unit, max) => {
+            const w = state.wetflag ? state.wetflag.weight : null;
+            const per = `${lo}–${hi} ${unit}/kg, max ${max} ${unit}`;
+            if (!w) return per;
+            const a = fmtDose(Math.min(w * lo, max)), b = fmtDose(Math.min(w * hi, max));
+            return `${a === b ? a : `${a}–${b}`} ${unit} (${per})`;
+        };
 
         const neoDoses = (w) => ({
             adrenaline_mcg: Math.round(w * 20),
@@ -888,7 +917,9 @@
                 }
                 if (state.mode === 'PAEDS' && state.counts.ett > 0) li('text-slate-600', 'Tube problems? DOPE (Displacement, Obstruction, Pneumothorax, Equipment)');
                 if (sc.pregnancy && arrestSeconds(now) < 600) li('text-pink-700 font-bold', `Pregnancy: perimortem delivery if no ROSC by 4 min (now T+${formatTime(arrestSeconds(now))})`);
-                if (sc.pe) li('text-slate-700', 'PE: if thrombolysed, continue CPR 60–90 min');
+                if (sc.pe) li('text-slate-700', state.mode === 'PAEDS'
+                    ? `PE: consider thrombolysis, e.g. alteplase ${esc(kgRange(0.3, 0.5, 'mg', 50))} IV over 2 min`
+                    : 'PE: if thrombolysed, continue CPR 60–90 min');
             }
             if (hasAdvancedAirway() && state.airwayCycle !== null && state.cycleCount - state.airwayCycle <= 1) {
                 li('text-slate-700', 'Confirm airway with waveform capnography');
@@ -2174,6 +2205,9 @@
 
         // Special circumstances
         const circGuidance = (sc) => {
+            if (state.mode === 'NEO') {
+                return '<span class="block text-xs font-semibold text-pink-700 mt-2">Not part of the RCUK newborn life support (NLS) algorithm</span><p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">No adult or paediatric doses shown. Follow NLS and seek senior neonatal help.</p>';
+            }
             if (state.mode === 'PAEDS' && sc.paeds) {
                 const tag = '<span class="block text-xs font-semibold text-teal-700 mt-2">Paediatric – RCUK 2025 PLS</span>';
                 const note = sc.kg && !state.wetflag ? ' Enter the weight for calculated doses.' : '';

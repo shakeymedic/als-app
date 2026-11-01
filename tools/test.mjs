@@ -334,6 +334,46 @@ for (const file of FILES) {
     check((await text(q, '#timer-subline')).includes('DUE') && (await text(q, '#guidance-content')).includes('every 6–10 min'), 'adult hypothermia 30–35: adrenaline due at 6 min (unchanged)');
   }
 
+  // --- Special Circs cards in PLS / NLS mode: paediatric doses from the weight, never adult doses
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hyperkalaemia"]');
+    let hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('0.1 units/kg, max 10 units') && hk.includes('Enter the weight'), 'PLS hyperkalaemia without weight: per-kg doses', hk);
+    await q.click('#guidance-tab');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('insulin 2 units (0.1 units/kg, max 10 units)') && hk.includes('10% glucose 100 ml (5 ml/kg, max 250 ml)') && hk.includes('salbutamol 100 mcg'), 'PLS hyperkalaemia at 20 kg: insulin 2 units + 10% glucose 100 ml', hk);
+    check(hk.includes('Do not use calcium') && !hk.includes('calcium chloride') && !hk.includes('bicarbonate') && !hk.includes('25 g'), 'PLS hyperkalaemia: no adult calcium/bicarbonate/glucose doses', hk);
+    await q.fill('#input-weight', '120'); await q.locator('#input-weight').blur();
+    hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('insulin 10 units') && hk.includes('glucose 250 ml'), 'PLS hyperkalaemia: insulin and glucose capped (10 units, 250 ml)', hk);
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#special-circs-tab');
+    for (const id of ['pe', 'trauma', 'anaphylaxis', 'pregnancy', 'toxins', 'asthma', 'drowning']) await q.click(`[data-circ="${id}"]`);
+    const all = await text(q, '#special-circs-content');
+    check(all.includes('alteplase 6–10 mg (0.3–0.5 mg/kg, max 50 mg)') && all.includes('Tranexamic acid 300–400 mg') && all.includes('cardiac arrest dose: 200 mcg') && all.includes('200 ml (10 ml/kg) boluses'), 'PLS cards: weight-based alteplase, tranexamic acid, adrenaline and fluid', all);
+    check(!all.includes('1mg IV') && !all.includes('ALS doses') && !all.includes('calcium chloride'), 'PLS cards: no adult doses', all);
+    check((await text(q, '[data-circ="pregnancy"]')).includes('Adult guidance – no separate RCUK paediatric guidance'), 'PLS pregnancy card labelled as adult guidance');
+    await q.click('#guidance-tab'); await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="pe"]'); await q.click('[data-circ="pregnancy"]');
+    await q.click('#guidance-tab'); await q.click('#rhythm-pea-btn');
+    const g = await text(q, '#guidance-content');
+    check(g.includes('PE: consider thrombolysis, e.g. alteplase 6–10 mg') && !g.includes('60–90 min'), 'PLS PE prompt: paediatric alteplase dose', g);
+    check(g.includes('perimortem delivery if no ROSC by 4 min'), 'pregnancy 4-min prompt unchanged');
+    check(q.errs.length === 0, 'no page errors (PLS special circs)', q.errs.join(' | '));
+  }
+  {
+    const q = await fresh();
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hyperkalaemia"]');
+    check((await text(q, '[data-circ="hyperkalaemia"]')).includes('Insulin 10 units (soluble) + glucose 25 g'), 'adult hyperkalaemia card unchanged');
+    await q.click('#guidance-tab'); await q.click('button[data-mode="NEO"]'); await q.click('#special-circs-tab');
+    for (const id of ['hypothermia-severe', 'anaphylaxis', 'pe']) await q.click(`[data-circ="${id}"]`);
+    const neo = await text(q, '#special-circs-content');
+    check(neo.includes('Not part of the RCUK newborn life support') && !/\d+ ?(mg|units|mmol|mcg|ml)\b/.test(neo), 'NLS mode: Special Circs cards show no adult or paediatric doses', neo);
+  }
+
   // --- Escaping of free text
   await p.fill('#custom-intervention-input', '<b>K+</b> 7.1');
   await p.click('#add-intervention-btn');
