@@ -183,7 +183,12 @@ for (const file of FILES) {
   await p.clock.runFor(31000);
   await p.click('#neo-hr-lt60-btn');
   check((await text(p, '#guidance-content')).includes('Give adrenaline 70 mcg'), 'NEO: adrenaline 20 mcg/kg prompted after compressions fail');
-  check((await text(p, '#patient-info-display')).includes('Glucose 10%: 8.8 ml (2.5 ml/kg)'), 'NEO glucose 2.5 ml/kg');
+  check((await text(p, '#patient-info-display')).includes('Glucose 10%: 7 ml (2 ml/kg'), 'NEO glucose 2 ml/kg (RCUK 2025)');
+  await p.click('button[data-drug="adrenaline"]');
+  for (let i = 0; i < 7; i++) { await p.clock.runFor(31000); await p.click('#neo-hr-lt60-btn'); } // ~3.6 min after the dose
+  check(!(await text(p, '#guidance-content')).includes('Give adrenaline'), 'NEO: repeat adrenaline not due before 4 min (RCUK 2025)');
+  await p.clock.runFor(31000); await p.click('#neo-hr-lt60-btn'); // ~4.1 min
+  check((await text(p, '#guidance-content')).includes('repeat dose due'), 'NEO: repeat adrenaline due every 4 min (RCUK 2025)');
   check(p.errs.length === 0, 'no page errors (NEO)', p.errs.join(' | '));
 
   // --- Paediatric doses

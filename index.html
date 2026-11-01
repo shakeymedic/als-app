@@ -460,7 +460,7 @@
             adrenaline_mcg: Math.round(w * 20),
             adrenaline_vol: (w * 0.2).toFixed(2),
             fluids: Math.round(w * 10),
-            glucose: +(w * 2.5).toFixed(1),
+            glucose: +(w * 2).toFixed(1),
             tube: w < 1 ? '2.5' : (w < 2 ? '3.0' : (w < 3 ? '3.0–3.5' : '3.5')),
             depth: (w + 6).toFixed(1)
         });
@@ -485,7 +485,7 @@
                 `Weight: ${w} kg (${state.weightSource || 'assumed'})`,
                 `Adrenaline IV: ${d.adrenaline_mcg} mcg = ${d.adrenaline_vol} ml of 1:10,000 (20 mcg/kg)`,
                 `Volume: ${d.fluids} ml (10 ml/kg)`,
-                `Glucose 10%: ${d.glucose} ml (2.5 ml/kg)`,
+                `Glucose 10%: ${d.glucose} ml (2 ml/kg, if blood glucose low)`,
                 `ETT: ${d.tube} mm @ ${d.depth} cm at lip (weight + 6)`
             ];
         };
@@ -785,14 +785,14 @@
             const preArrival = count > 0 && last === null && !!state.startTime;
             const since = last ? (now - last) / 1000 : (preArrival ? (now - state.startTime) / 1000 : null);
             const sc = state.specialCircs;
-            const interval = sc['hypothermia-moderate'] ? 360 : 180;
+            const interval = state.mode === 'NEO' ? 240 : (sc['hypothermia-moderate'] ? 360 : 180);
             const res = { due: false, reason: '', count, since, interval, withheld: false, preArrival };
             if (state.outcome !== 'ONGOING') return res;
             if (state.mode !== 'NEO' && sc['hypothermia-severe']) { res.withheld = true; return res; }
             if (state.mode === 'NEO') {
                 if (state.neoCprCycles >= 2) {
                     if (count === 0) { res.due = true; res.reason = 'HR < 60 despite compressions'; }
-                    else if (since !== null && since >= interval) { res.due = true; res.reason = 'repeat every 3–5 min'; }
+                    else if (since !== null && since >= interval) { res.due = true; res.reason = 'repeat every 4 min'; }
                 }
                 return res;
             }
@@ -823,14 +823,14 @@
             if (state.mode === 'NEO') {
                 if (state.neoPhase === 'VENT') {
                     li('text-blue-600 font-semibold', 'Watch for chest movement with each breath');
-                    li('', 'SpO₂ targets (pre-ductal): 2 min 65% · 5 min 85% · 10 min 90%');
+                    li('', 'Acceptable pre-ductal SpO₂: 3 min 70–75% · 5 min 80–85% · 10 min 85–95%');
                 } else {
                     li('text-blue-600 font-semibold', 'Increase oxygen to 100%');
                     if (!hasAdvancedAirway()) li('', 'Consider SGA or tracheal intubation');
                     if (state.neoCprCycles >= 2) {
                         li('text-purple-700 font-semibold', 'HR < 60: vascular access (UVC / IO) and drugs');
                         if (adr.due) li('text-purple-700 font-black text-2xl', `Give adrenaline ${adrenalineDoseText()}${adr.count ? ' – repeat dose due' : ''}`);
-                        li('', `Consider volume ${neoDoses(neoWeight()).fluids} ml (10 ml/kg) and glucose; pneumothorax, hypovolaemia, congenital abnormality`);
+                        li('', `Check blood glucose (give glucose only if low). Consider volume ${neoDoses(neoWeight()).fluids} ml (10 ml/kg); pneumothorax, hypovolaemia, congenital abnormality`);
                     }
                 }
             } else {
@@ -879,7 +879,7 @@
             if (mode === 'NEO') {
                 protocolBadge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-700';
                 timerContainer.classList.add('border-pink-500');
-                link.href = 'https://www.resus.org.uk/sites/default/files/2025-11/RCUK%20G2025%20NEO%20NLS%20Oct%20V2%201.pdf';
+                link.href = 'https://www.resus.org.uk/sites/default/files/2026-03/RCUK%20G2025%20NEO%20NLS%20Mar%20V4.1.pdf';
                 linkText.innerText = 'NLS Guidelines 2025';
             } else if (mode === 'PAEDS') {
                 protocolBadge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-teal-100 text-teal-700';
@@ -987,7 +987,7 @@
                 const d = neoDoses(neoWeight());
                 html += drugBtn('adrenaline', `Adrenaline ${d.adrenaline_mcg} mcg IV (${d.adrenaline_vol} ml 1:10,000)`, 'bg-purple-500 hover:bg-purple-600', `Adrenaline ${d.adrenaline_vol}ml`, '(1:10,000, 20mcg/kg)');
                 html += drugBtn('fluids', `Volume ${d.fluids} ml (10 ml/kg)`, 'bg-blue-500 hover:bg-blue-600', `Volume ${d.fluids}ml`, '(10ml/kg)');
-                html += drugBtn('glucose', `Glucose 10% ${d.glucose} ml (2.5 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${d.glucose}ml`, '(10%, 2.5ml/kg)', true);
+                html += drugBtn('glucose', `Glucose 10% ${d.glucose} ml (2 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${d.glucose}ml`, '(10%, 2ml/kg, if low)', true);
             }
             interventionsButtonsGrid.innerHTML = html;
         };
@@ -1106,7 +1106,7 @@
                                 <li>Dry, stimulate, keep warm; assess tone, breathing, heart rate</li>
                                 <li>Open airway: neutral head position</li>
                                 <li><strong>5 inflation breaths</strong>: 2–3 s each, 30 cmH₂O (25 cmH₂O if &lt; 32 weeks)</li>
-                                <li>Start in air (≥ 32 weeks); 21–30% O₂ if 28–31 weeks; 30% if &lt; 28 weeks</li>
+                                <li>Start in 21% O₂ (air) if ≥ 32 weeks; ≥ 30% O₂ if &lt; 32 weeks</li>
                             </ul>
                             <button id="neo-inflation-btn" data-action="neo-inflation" class="mt-6 w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-5 px-4 rounded-lg text-xl shadow-lg">
                                 ${state.neoChestNotMoving ? 'Inflation breaths repeated' : 'Inflation breaths given'} → Reassess
@@ -2004,13 +2004,13 @@
                 const drugName = button.dataset.drugName || drug;
                 if (drug === 'adrenaline') {
                     const prev = lastAdrenalineTime();
-                    const interval = state.specialCircs['hypothermia-moderate'] ? 360 : 180;
+                    const interval = state.mode === 'NEO' ? 240 : (state.specialCircs['hypothermia-moderate'] ? 360 : 180);
                     state.counts.adrenaline++;
                     addLog(`${drugName} given`, { type: 'drug', key: drug });
                     if (prev) {
                         const gap = Math.floor((Date.now() - prev) / 1000);
                         if (gap < interval) {
-                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${interval === 360 ? '6–10' : '3–5'} min)`;
+                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${interval === 360 ? '6–10' : (interval === 240 ? '4' : '3–5')} min)`;
                             addLog(warn);
                             showToast(warn);
                             renderInterventionButtons();
