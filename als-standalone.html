@@ -436,9 +436,9 @@
         const reversibleCauses = [
             { id: 'hypoxia', name: 'Hypoxia' },
             { id: 'hypovolaemia', name: 'Hypovolaemia' },
-            { id: 'hypo-hyperkalaemia', name: 'Hypo/Hyperkalaemia' },
-            { id: 'hypothermia', name: 'Hypothermia' },
-            { id: 'thrombosis', name: 'Thrombosis' },
+            { id: 'hypo-hyperkalaemia', name: 'Hyper/hypokalaemia & metabolic' },
+            { id: 'hypothermia', name: 'Hypo/hyperthermia' },
+            { id: 'thrombosis', name: 'Thrombosis (coronary/pulmonary)' },
             { id: 'tamponade', name: 'Tamponade (Cardiac)' },
             { id: 'toxins', name: 'Toxins' },
             { id: 'tension-pneumo', name: 'Tension Pneumothorax' },
@@ -1241,7 +1241,7 @@
                         cprText = 'Continuous Compressions';
                         subText = mode === 'PAEDS'
                             ? 'Ventilate without pausing compressions (breaths/min): infant 25 · 1–8 y 20 · 8–12 y 15 · &gt; 12 y 10'
-                            : 'Ventilations independent of compressions (appropriate rate)';
+                            : 'Ventilate at 10 breaths/min without pausing compressions';
                     } else {
                         cprText = mode === 'PAEDS' ? '15:2 Ratio' : '30:2 Ratio';
                     }
@@ -1258,8 +1258,8 @@
                                 ${mode !== 'NEO' ? `
                                 <div id="cpr-causes-box" class="mt-3 text-left bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200 text-base text-indigo-900">
                                     <span class="font-bold">Check reversible causes:</span>
-                                    <span class="block sm:inline"><strong>4 Hs</strong> hypoxia · hypovolaemia · hypo/hyperkalaemia · hypothermia</span>
-                                    <span class="block"><strong>4 Ts</strong> thrombosis · tamponade · toxins · tension pneumothorax</span>
+                                    <span class="block sm:inline"><strong>4 Hs</strong> hypoxia · hypovolaemia · hyper/hypokalaemia &amp; other metabolic · hypo/hyperthermia</span>
+                                    <span class="block"><strong>4 Ts</strong> thrombosis (coronary/pulmonary) · tamponade · toxins · tension pneumothorax</span>
                                 </div>` : ''}
                             </div>
                         </div>`;
@@ -1293,13 +1293,13 @@
                             <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Immediate Post-Resuscitation Care (ABCDE)</h3>
                             <div class="grid lg:grid-cols-2 gap-x-6 gap-y-3">
                             <div><p class="font-semibold text-slate-700">A - Airway</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Maintain patent airway.</li><li>Intubate if unconscious (avoid hyperventilation).</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">B - Breathing</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Aim SpO<sub>2</sub> 94-98%.</li><li>Aim normal PaCO<sub>2</sub> (4.5-6.0 kPa).</li><li>Protective lung ventilation strategy.</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">C - Circulation</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>12-lead ECG: Urgent PCI for STEMI?</li><li>Aim SBP &gt; 100 mmHg (MAP &gt; 65 mmHg).</li><li>Fluid bolus / Vasopressors (Noradrenaline).</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">B - Breathing</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Aim SpO<sub>2</sub> 94-98%.</li><li>Aim normal PaCO<sub>2</sub> (4.7-6.0 kPa).</li><li>Protective lung ventilation strategy.</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">C - Circulation</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>12-lead ECG: Urgent PCI for STEMI?</li><li>Aim SBP &gt; 100 mmHg or MAP &gt; 60-65 mmHg.</li><li>Fluid bolus / Vasopressors (Noradrenaline).</li></ul></div>
                             <div><p class="font-semibold text-slate-700">D - Disability</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Control Glucose (4-10 mmol/L).</li><li>Treat Seizures.</li><li>Sedation for shivering/agitation.</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">E - Exposure / Temperature</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Targeted Temperature Management.</li><li>Maintain temp &le; 37.5&deg;C (prevent fever).</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">E - Exposure / Temperature</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Temperature control if comatose (36-72 h).</li><li>Maintain temp &le; 37.5&deg;C (prevent fever).</li></ul></div>
                             </div>
                             <div class="mt-4 pt-4 border-t border-green-200">
-                                <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
+                                <a href="https://www.resus.org.uk/sites/default/files/2026-03/RCUK%20G2025%20ADULT%20PRC%20March%20V3.pdf" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
                                     <i data-lucide="external-link" class="w-4 h-4 mr-2"></i> View Full 2025 RCUK Post-ROSC Guide
                                 </a>
                             </div>`;
