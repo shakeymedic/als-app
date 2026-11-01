@@ -473,7 +473,7 @@
             return {
                 weight: +w.toFixed(1),
                 energy,
-                energyText: energy >= 150 ? `150–200 J (adult dose; 4 J/kg = ${energy} J)` : `${energy} J (4 J/kg)`,
+                energyText: energy >= 120 ? `120–200 J (adult dose, per defibrillator; 4 J/kg = ${energy} J)` : `${energy} J (4 J/kg)`,
                 adrenaline_mcg: adrMcg,
                 adrenaline_vol: (adrMcg / 100).toFixed(2),
                 adrCapped: w * 10 > 1000,
@@ -484,6 +484,11 @@
                 tube
             };
         };
+
+        // RCUK 2025 PLS: from the 5th shock escalate stepwise up to 8 J/kg (max 360 J); 2nd amiodarone dose max 150 mg.
+        // Worked out from the weight so records saved by older versions still show them.
+        const paedsEnergyMax = wf => Math.min(Math.round(wf.weight * 8), 360);
+        const paedsAmio2 = wf => Math.min(Math.round(wf.weight * 5), 150);
 
         const neoDoses = (w) => ({
             adrenaline_mcg: Math.round(w * 20),
@@ -502,7 +507,7 @@
                 `Weight: ${wf.weight} kg (${state.weightSource || 'entered'})${state.patientAge !== null ? ` | Age: ${state.patientAge} yr` : ''}`,
                 `Energy: ${wf.energyText}`,
                 `Adrenaline: ${wf.adrenaline_mcg} mcg = ${wf.adrenaline_vol} ml of 1:10,000 (10 mcg/kg${wf.adrCapped ? ', capped at 1 mg' : ''})`,
-                `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})`,
+                `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})${paedsAmio2(wf) < wf.amiodarone ? `; 2nd dose ${paedsAmio2(wf)} mg (max 150 mg)` : ''}`,
                 `Fluid bolus: ${wf.fluids} ml (10 ml/kg)`,
                 `Glucose 10%: ${wf.glucose} ml (2 ml/kg)`,
                 wf.tube ? `ETT: uncuffed ${wf.tube.uncuffed} mm / cuffed ${wf.tube.cuffed} mm${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
@@ -869,7 +874,7 @@
                 if (!sc['hypothermia-severe'] && state.currentRhythm === 'SHOCKABLE') {
                     const paedsAmio = state.wetflag ? `${state.wetflag.amiodarone} mg` : '5 mg/kg (max 300 mg)';
                     if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}`);
-                    else if (state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : paedsAmio + ' (2nd dose)'}`);
+                    else if (state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}`);
                 }
                 if (state.mode === 'ADULT' && state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) {
                     li('text-blue-600 font-semibold', 'Consider changing pad position (e.g. anterior–posterior)');
@@ -1000,7 +1005,9 @@
             } else if (state.mode === 'PAEDS' && state.wetflag) {
                 const wf = state.wetflag;
                 html += drugBtn('adrenaline', `Adrenaline ${wf.adrenaline_mcg} mcg (${wf.adrenaline_vol} ml 1:10,000)`, 'bg-purple-500 hover:bg-purple-600', `Adrenaline ${wf.adrenaline_mcg}mcg`, `(${wf.adrenaline_vol}ml of 1:10k${wf.adrCapped ? ', max' : ''})`);
-                html += drugBtn('amiodarone', `Amiodarone ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', max 300 mg' : ''})`, 'bg-orange-500 hover:bg-orange-600', `Amiodarone ${wf.amiodarone}mg`, wf.amioCapped ? '(max dose)' : '(5mg/kg)');
+                const amioDose = state.counts.amiodarone === 0 ? wf.amiodarone : paedsAmio2(wf);
+                const amioMax = state.counts.amiodarone === 0 ? (wf.amioCapped ? 300 : 0) : (wf.weight * 5 > 150 ? 150 : 0);
+                html += drugBtn('amiodarone', `Amiodarone ${amioDose} mg (5 mg/kg${amioMax ? `, max ${amioMax} mg` : ''})`, 'bg-orange-500 hover:bg-orange-600', `Amiodarone ${amioDose}mg`, amioMax ? '(max dose)' : '(5mg/kg)');
                 html += drugBtn('fluids', `Fluid ${wf.fluids} ml (10 ml/kg)`, 'bg-blue-500 hover:bg-blue-600', `Fluid ${wf.fluids}ml`, '(10ml/kg)');
                 html += drugBtn('glucose', `Glucose 10% ${wf.glucose} ml (2 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${wf.glucose}ml`, '(10%, 2ml/kg)');
             } else if (state.mode === 'PAEDS') {
@@ -1205,7 +1212,10 @@
                                 ${[150, 200, 360].map(j => `<button data-action="energy" data-energy="${j}" class="px-3 py-1 rounded-full border ${state.shockEnergy === j ? 'bg-red-600 text-white border-red-600' : 'bg-white text-slate-600 border-slate-300'}">${j} J</button>`).join('')}
                             </div>`;
                     } else {
-                        energyHtml = `<p class="text-xl text-slate-600 mb-6">Energy: <strong>${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</strong></p>`;
+                        const escalate = state.shocksDelivered + 1 >= 5; // RCUK 2025 PLS: from 5th shock escalate stepwise to 8 J/kg (max 360 J)
+                        energyHtml = escalate
+                            ? `<p class="text-xl text-slate-600 mb-6">Energy: <strong>refractory VF/pVT – escalate stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J (8 J/kg, max 360 J)` : '8 J/kg (max 360 J)'}</strong><span class="block text-base">1st shock was ${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</span></p>`
+                            : `<p class="text-xl text-slate-600 mb-6">Energy: <strong>${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</strong></p>`;
                     }
                     const hypoWarn = state.specialCircs['hypothermia-severe'] && state.shocksDelivered >= 3;
                     content = `
@@ -1229,7 +1239,9 @@
                         subText = 'Reassess heart rate every 30 s';
                     } else if (airway) {
                         cprText = 'Continuous Compressions';
-                        subText = 'Ventilations independent of compressions (appropriate rate)';
+                        subText = mode === 'PAEDS'
+                            ? 'Ventilate without pausing compressions (breaths/min): infant 25 · 1–8 y 20 · 8–12 y 15 · &gt; 12 y 10'
+                            : 'Ventilations independent of compressions (appropriate rate)';
                     } else {
                         cprText = mode === 'PAEDS' ? '15:2 Ratio' : '30:2 Ratio';
                     }
@@ -1271,9 +1283,9 @@
                             <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Post-Resuscitation Care (Child)</h3>
                             <ul class="list-disc list-inside text-sm text-slate-600 ml-2 space-y-1">
                                 <li>A/B: SpO₂ 94–98%, normocapnia; avoid hyperventilation</li>
-                                <li>C: Avoid hypotension (systolic BP &gt; 5th centile for age); fluids / inotropes</li>
+                                <li>C: Keep systolic and mean BP above the 10th percentile for age; fluids / vasoactive drugs</li>
                                 <li>D: Normoglycaemia; treat seizures</li>
-                                <li>E: Avoid fever (temperature ≤ 37.5 °C)</li>
+                                <li>E: Temperature control for at least 24 h; avoid fever for at least 72 h</li>
                                 <li>Contact paediatric critical care / retrieval</li>
                             </ul>`;
                     } else {
@@ -1586,7 +1598,9 @@
             state.counts.shocks++;
             let energy = '';
             if (state.mode === 'ADULT' && state.shockEnergy) energy = ` (${state.shockEnergy} J)`;
-            else if (state.mode === 'PAEDS') energy = state.wetflag ? ` (${state.wetflag.energyText})` : ' (4 J/kg)';
+            else if (state.mode === 'PAEDS') energy = state.shocksDelivered >= 5
+                ? ` (escalation from 5th shock, up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J / ` : ''}8 J/kg, max 360 J)`
+                : (state.wetflag ? ` (${state.wetflag.energyText})` : ' (4 J/kg)');
             addLog(`Shock ${state.shocksDelivered} delivered${energy}`, { type: 'shock' });
             handleStartCpr();
         };
