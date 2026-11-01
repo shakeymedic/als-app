@@ -254,6 +254,14 @@ for (const file of FILES) {
   await p.click('#guidance-tab');
   await p.click('#rhythm-pea-btn');
   check((await text(p, '#guidance-content')).includes('withhold adrenaline'), 'hypothermia < 30: adrenaline withheld');
+  {
+    const q = await fresh();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]'); await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    const hg = await text(q, '#guidance-content');
+    check(hg.includes('Give amiodarone 300 mg') && hg.includes('loading dose') && !hg.includes('Give adrenaline'), 'hypothermia < 30 (RCUK 2025): amiodarone loading dose, adrenaline withheld', hg);
+  }
 
   // --- Escaping of free text
   await p.fill('#custom-intervention-input', '<b>K+</b> 7.1');

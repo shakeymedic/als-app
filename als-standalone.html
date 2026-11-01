@@ -421,10 +421,10 @@
 
         // --- Special Circumstances (RCUK) ---
         const specialCircumstances = [
-            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline and amiodarone until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECLS.' },
+            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline until > 30 °C (then 1 mg). If shockable, give one amiodarone 300 mg loading dose; delay further doses until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECPR (VA-ECMO).' },
             { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.' },
             { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.' },
-            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'Calcium chloride 10% 10 ml IV. Insulin 10 units + glucose 25 g IV. Consider sodium bicarbonate 50 mmol (severe acidosis / renal failure). Consider dialysis.' },
+            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.' },
             { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.' },
             { id: 'trauma', name: 'Traumatic arrest', guidance: 'Treat reversible causes simultaneously: haemorrhage control & volume, oxygenation, bilateral thoracostomies (tension), resuscitative thoracotomy (tamponade). Compressions must not delay these.' },
             { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.' },
@@ -868,13 +868,15 @@
                     }
                 }
             } else {
-                if (adr.withheld) li('text-sky-700 font-bold', 'Hypothermia < 30 °C: withhold adrenaline & amiodarone');
+                if (adr.withheld) li('text-sky-700 font-bold', 'Hypothermia < 30 °C: withhold adrenaline until > 30 °C');
                 else if (adr.due) li('text-purple-700 font-black text-2xl', `Give adrenaline ${adrenalineDoseText()} <span class="font-semibold text-lg">(${adr.reason})</span>`);
 
-                if (!sc['hypothermia-severe'] && state.currentRhythm === 'SHOCKABLE') {
+                if (state.currentRhythm === 'SHOCKABLE') {
                     const paedsAmio = state.wetflag ? `${state.wetflag.amiodarone} mg` : '5 mg/kg (max 300 mg)';
-                    if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}`);
-                    else if (state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}`);
+                    // Hypothermia < 30 °C (RCUK 2025): one loading dose of amiodarone, further doses delayed until > 30 °C
+                    const hypoSevere = !!sc['hypothermia-severe'];
+                    if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}${hypoSevere ? ' <span class="font-semibold text-lg">(loading dose; no further doses until &gt; 30 °C)</span>' : ''}`);
+                    else if (!hypoSevere && state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}`);
                 }
                 if (state.mode === 'ADULT' && state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) {
                     li('text-blue-600 font-semibold', 'Consider changing pad position (e.g. anterior–posterior)');
