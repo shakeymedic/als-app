@@ -392,8 +392,14 @@
 
         // --- Special Circumstances (RCUK) ---
         const specialCircumstances = [
-            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline until > 30 °C (then 1 mg). If shockable, give one amiodarone 300 mg loading dose; delay further doses until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECPR (VA-ECMO).' },
-            { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.' },
+            // guidance: adult (RCUK 2025 ALS / special circumstances). paeds(): RCUK 2025 PLS wording, with doses
+            // worked out from the entered weight. paedsAdult: no paediatric equivalent, adult guidance shown and labelled.
+            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline until > 30 °C (then 1 mg). If shockable, give one amiodarone 300 mg loading dose; delay further doses until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECPR (VA-ECMO).',
+                kg: true,
+                paeds: () => `Give a single dose of adrenaline (${adrenalineDoseText()}) unless planning immediate initiation of extracorporeal life support. Do not give amiodarone until > 30 °C. Shockable rhythm: give a maximum of three shocks; if ineffective, delay further attempts until > 30 °C. Rewarm: < 32 °C use active external and internal rewarming, including extracorporeal techniques. Consider transport to a centre for extracorporeal life support.` },
+            { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.',
+                kg: true,
+                paeds: () => `Adrenaline ${adrenalineDoseText()} every 8 min (6–10 min). Second dose of amiodarone (${state.wetflag ? `${paedsAmio2(state.wetflag)} mg; ` : ''}5 mg/kg, max 150 mg) after 8 min. Normal defibrillation interval (every 2 min). Rewarm: > 32 °C external rewarming; < 32 °C active external and internal rewarming, including extracorporeal techniques.` },
             { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.' },
             { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.' },
             { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.' },
@@ -748,13 +754,21 @@
             return null;
         };
 
-        const lastAdrenalineTime = () => {
+        const lastDrugTime = (key) => {
             for (let i = state.log.length - 1; i >= 0; i--) {
                 const e = state.log[i];
-                if (e.key === 'adrenaline' && !e.voided) return e.t;
+                if (e.key === key && !e.voided) return e.t;
             }
             return null;
         };
+        const lastAdrenalineTime = () => lastDrugTime('adrenaline');
+
+        // Adrenaline repeat interval (seconds). Hypothermia 30–35 °C: adult (RCUK 2025 special circumstances)
+        // "Increase administration intervals for adrenaline to 6-10 min"; paediatric (RCUK 2025 PLS)
+        // "adrenaline IV/IO every 8 min (6-10 min)".
+        const adrenalineInterval = () => state.mode === 'NEO' ? 240
+            : (state.specialCircs['hypothermia-moderate'] ? (state.mode === 'PAEDS' ? 480 : 360) : 180);
+        const INTERVAL_TEXT = { 480: '8 min (6–10 min)', 360: '6–10 min', 240: '4 min', 180: '3–5 min' };
 
         const arrestSeconds = (now = Date.now()) => {
             if (!state.startTime) return 0;
@@ -790,10 +804,15 @@
             const preArrival = count > 0 && last === null && !!state.startTime;
             const since = last ? (now - last) / 1000 : (preArrival ? (now - state.startTime) / 1000 : null);
             const sc = state.specialCircs;
-            const interval = state.mode === 'NEO' ? 240 : (sc['hypothermia-moderate'] ? 360 : 180);
+            const interval = adrenalineInterval();
             const res = { due: false, reason: '', count, since, interval, withheld: false, preArrival };
             if (state.outcome !== 'ONGOING') return res;
-            if (state.mode !== 'NEO' && sc['hypothermia-severe']) { res.withheld = true; return res; }
+            // Hypothermia < 30 °C. Adult (RCUK 2025 special circumstances): no adrenaline until > 30 °C.
+            // Paediatric (RCUK 2025 PLS): "give a single dose of adrenaline unless planning immediate
+            // initiation of extracorporeal life support".
+            const hypoSingle = state.mode === 'PAEDS' && sc['hypothermia-severe'];
+            if (state.mode === 'ADULT' && sc['hypothermia-severe']) { res.withheld = true; return res; }
+            if (hypoSingle && count > 0) { res.withheld = true; return res; }
             if (state.mode === 'NEO') {
                 if (state.neoCprCycles >= 2) {
                     if (count === 0) { res.due = true; res.reason = 'HR < 60 despite compressions'; }
@@ -804,9 +823,10 @@
             if (count === 0) {
                 if (state.currentRhythm === 'NON_SHOCKABLE') { res.due = true; res.reason = 'non-shockable: give as soon as possible'; }
                 else if (state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) { res.due = true; res.reason = 'after 3rd shock'; }
+                if (res.due && hypoSingle) res.reason += '; hypothermia < 30 °C: single dose only, unless immediate ECLS planned';
             } else if (since !== null && since >= interval) {
                 res.due = true;
-                res.reason = interval === 360 ? 'hypothermia 30–35 °C: every 6–10 min' : 'every 3–5 min';
+                res.reason = interval === 180 ? 'every 3–5 min' : `hypothermia 30–35 °C: every ${INTERVAL_TEXT[interval]}`;
                 if (preArrival) res.reason += ' – last dose given before arrival';
             }
             return res;
@@ -839,15 +859,26 @@
                     }
                 }
             } else {
-                if (adr.withheld) li('text-sky-700 font-bold', 'Hypothermia < 30 °C: withhold adrenaline until > 30 °C');
+                if (adr.withheld) li('text-sky-700 font-bold', state.mode === 'PAEDS'
+                    ? 'Hypothermia &lt; 30 °C: single adrenaline dose given – no further doses until &gt; 30 °C'
+                    : 'Hypothermia < 30 °C: withhold adrenaline until > 30 °C');
                 else if (adr.due) li('text-purple-700 font-black text-2xl', `Give adrenaline ${adrenalineDoseText()} <span class="font-semibold text-lg">(${adr.reason})</span>`);
 
                 if (state.currentRhythm === 'SHOCKABLE') {
                     const paedsAmio = state.wetflag ? `${state.wetflag.amiodarone} mg` : '5 mg/kg (max 300 mg)';
-                    // Hypothermia < 30 °C (RCUK 2025): one loading dose of amiodarone, further doses delayed until > 30 °C
+                    // Hypothermia < 30 °C. Adult (RCUK 2025 special circumstances): one loading dose of amiodarone,
+                    // further doses delayed until > 30 °C. Paediatric (RCUK 2025 PLS): "Do not give amiodarone until
+                    // the temperature is above 30°C".
                     const hypoSevere = !!sc['hypothermia-severe'];
-                    if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}${hypoSevere ? ' <span class="font-semibold text-lg">(loading dose; no further doses until &gt; 30 °C)</span>' : ''}`);
-                    else if (!hypoSevere && state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}`);
+                    const paedsNoAmio = hypoSevere && state.mode === 'PAEDS';
+                    // Paediatric hypothermia 30–35 °C (RCUK 2025 PLS): "second dose amiodarone IV/IO after 8 min"
+                    const amioT = lastDrugTime('amiodarone');
+                    const paedsAmio8 = state.mode === 'PAEDS' && !!sc['hypothermia-moderate'] && amioT !== null;
+                    const amio2Due = paedsAmio8 ? (now - amioT) / 1000 >= 480 : state.shocksDelivered >= 5;
+                    if (paedsNoAmio) {
+                        if (state.shocksDelivered >= 3) li('text-sky-700 font-bold', 'Hypothermia &lt; 30 °C: no amiodarone until &gt; 30 °C');
+                    } else if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}${hypoSevere ? ' <span class="font-semibold text-lg">(loading dose; no further doses until &gt; 30 °C)</span>' : ''}`);
+                    else if (!hypoSevere && amio2Due && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}${paedsAmio8 ? ' <span class="font-semibold text-lg">(hypothermia 30–35 °C: 8 min after 1st dose)</span>' : ''}`);
                 }
                 if (state.mode === 'ADULT' && state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) {
                     li('text-blue-600 font-semibold', 'Consider changing pad position (e.g. anterior–posterior)');
@@ -913,6 +944,7 @@
             }
             state.mode = mode;
             applyProtocolStyling();
+            renderSpecialCircs();
             updateUI();
         };
 
@@ -1709,6 +1741,7 @@
             if (res) res.outerHTML = wetflagResultsHtml();
             renderInterventionButtons();
             updatePatientInfoDisplay();
+            renderSpecialCircs();
             save();
         };
 
@@ -2020,13 +2053,19 @@
                 const drugName = button.dataset.drugName || drug;
                 if (drug === 'adrenaline') {
                     const prev = lastAdrenalineTime();
-                    const interval = state.mode === 'NEO' ? 240 : (state.specialCircs['hypothermia-moderate'] ? 360 : 180);
+                    const interval = adrenalineInterval();
+                    const hypoSecond = state.mode === 'PAEDS' && state.specialCircs['hypothermia-severe'] && state.counts.adrenaline > 0;
                     state.counts.adrenaline++;
                     addLog(`${drugName} given`, { type: 'drug', key: drug });
-                    if (prev) {
+                    if (hypoSecond) {
+                        // RCUK 2025 PLS, hypothermia < 30 °C: "give a single dose of adrenaline"
+                        const warn = '⚠ Hypothermia < 30 °C: RCUK PLS advises a single adrenaline dose until > 30 °C';
+                        addLog(warn);
+                        showToast(warn);
+                    } else if (prev) {
                         const gap = Math.floor((Date.now() - prev) / 1000);
                         if (gap < interval) {
-                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${interval === 360 ? '6–10' : (interval === 240 ? '4' : '3–5')} min)`;
+                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${INTERVAL_TEXT[interval]})`;
                             addLog(warn);
                             showToast(warn);
                             renderInterventionButtons();
@@ -2134,6 +2173,18 @@
         });
 
         // Special circumstances
+        const circGuidance = (sc) => {
+            if (state.mode === 'PAEDS' && sc.paeds) {
+                const tag = '<span class="block text-xs font-semibold text-teal-700 mt-2">Paediatric – RCUK 2025 PLS</span>';
+                const note = sc.kg && !state.wetflag ? ' Enter the weight for calculated doses.' : '';
+                return `${tag}<p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">${esc(sc.paeds() + note)}</p>`;
+            }
+            if (state.mode === 'PAEDS' && sc.paedsAdult) {
+                const tag = '<span class="block text-xs font-semibold text-amber-700 mt-2">Adult guidance – no separate RCUK paediatric guidance</span>';
+                return `${tag}<p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">${esc(sc.guidance)}</p>`;
+            }
+            return `<p class="text-lg text-slate-800 font-medium mt-2 leading-snug break-words">${esc(sc.guidance)}</p>`;
+        };
         const renderSpecialCircs = () => {
             const cards = specialCircumstances.map(sc => {
                 const active = !!state.specialCircs[sc.id];
@@ -2144,7 +2195,7 @@
                             <span class="font-bold text-slate-700">${sc.name}</span>
                             ${active ? '<span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ACTIVE</span>' : '<span class="text-xs text-slate-400">Tap to activate</span>'}
                         </div>
-                        ${active ? `<p class="text-lg text-slate-800 font-medium mt-2 leading-snug break-words">${sc.guidance}</p>` : ''}
+                        ${active ? circGuidance(sc) : ''}
                     </button>`;
             }).join('');
             specialCircsContent.innerHTML = `

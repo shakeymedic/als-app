@@ -263,6 +263,77 @@ for (const file of FILES) {
     check(hg.includes('Give amiodarone 300 mg') && hg.includes('loading dose') && !hg.includes('Give adrenaline'), 'hypothermia < 30 (RCUK 2025): amiodarone loading dose, adrenaline withheld', hg);
   }
 
+  // --- Paediatric hypothermia (RCUK 2025 PLS): < 30 °C single adrenaline dose, no amiodarone; 30–35 °C every 8 min
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]');
+    const card = await text(q, '[data-circ="hypothermia-severe"]');
+    check(card.includes('Paediatric') && card.includes('single dose of adrenaline (200 mcg') && card.includes('Do not give amiodarone'), 'PLS hypothermia < 30 card: paediatric rules with weight-based dose', card);
+    await q.click('#guidance-tab');
+    await q.click('#rhythm-pea-btn');
+    let hg = await text(q, '#guidance-content');
+    check(hg.includes('Give adrenaline 200 mcg') && hg.includes('single dose'), 'PLS hypothermia < 30: one adrenaline dose prompted', hg);
+    await q.click('button[data-drug="adrenaline"]');
+    await q.clock.runFor(100000);
+    hg = await text(q, '#guidance-content');
+    check(hg.includes('single adrenaline dose given') && !hg.includes('Give adrenaline'), 'PLS hypothermia < 30: no further adrenaline after the single dose', hg);
+    await q.clock.runFor(21000); await q.click('#rhythm-pea-btn'); await q.clock.runFor(300000);
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'PLS hypothermia < 30: adrenaline never falls due again');
+    await q.click('button[data-drug="adrenaline"]');
+    check((await log(q)).some(m => m.includes('single adrenaline dose')), 'PLS hypothermia < 30: a 2nd dose is flagged');
+    check(q.errs.length === 0, 'no page errors (PLS hypothermia < 30)', q.errs.join(' | '));
+  }
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]'); await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    const hg = await text(q, '#guidance-content');
+    check(!hg.includes('Give amiodarone') && hg.includes('no amiodarone until') && hg.includes('Give adrenaline 200 mcg') && hg.includes('no further shocks'), 'PLS hypothermia < 30 shockable: adrenaline once, no amiodarone, max 3 shocks', hg);
+  }
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-moderate"]');
+    const card = await text(q, '[data-circ="hypothermia-moderate"]');
+    check(card.includes('every 8 min (6–10 min)') && card.includes('100 mg') && card.includes('after 8 min'), 'PLS hypothermia 30–35 card: 8-min adrenaline, 2nd amiodarone after 8 min', card);
+    await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    await q.click('button[data-drug="adrenaline"]'); await q.click('button[data-drug="amiodarone"]');
+    await q.clock.runFor(121000); await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn');
+    await q.clock.runFor(121000); await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); // 5th shock, ~4 min after amiodarone
+    let hg = await text(q, '#guidance-content');
+    check(!hg.includes('Give amiodarone') && !hg.includes('Give adrenaline'), 'PLS hypothermia 30–35: nothing due at 4 min (not the 5th-shock rule)', hg);
+    await q.clock.runFor(130000); // ~6.2 min
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'PLS hypothermia 30–35: adrenaline not due at 6 min (adult interval not used)');
+    await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn');
+    await q.clock.runFor(110000); // ~8.1 min
+    hg = await text(q, '#guidance-content');
+    check((await text(q, '#timer-subline')).includes('DUE') && hg.includes('every 8 min (6–10 min)'), 'PLS hypothermia 30–35: adrenaline due at 8 min', hg);
+    check(hg.includes('Give amiodarone 100 mg (2nd dose)') && hg.includes('8 min after 1st dose'), 'PLS hypothermia 30–35: 2nd amiodarone 8 min after the 1st', hg);
+    await q.click('button[data-drug="adrenaline"]'); await q.clock.runFor(60000); await q.click('button[data-drug="adrenaline"]');
+    check((await log(q)).some(m => m.includes('recommended interval 8 min (6–10 min)')), 'PLS hypothermia 30–35: early dose warns with the 8-min interval');
+  }
+  {
+    // Adult hypothermia 30–35 °C keeps the 6-minute interval
+    const q = await fresh();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-moderate"]'); await q.click('#guidance-tab');
+    await q.click('#rhythm-pea-btn'); await q.click('button[data-drug="adrenaline"]');
+    await q.clock.runFor(121000); await q.click('#rhythm-pea-btn'); await q.clock.runFor(120000); await q.click('#rhythm-pea-btn');
+    await q.clock.runFor(100000);
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'adult hypothermia 30–35: adrenaline not due at 5.7 min');
+    await q.clock.runFor(22000); await q.click('#rhythm-pea-btn');
+    check((await text(q, '#timer-subline')).includes('DUE') && (await text(q, '#guidance-content')).includes('every 6–10 min'), 'adult hypothermia 30–35: adrenaline due at 6 min (unchanged)');
+  }
+
   // --- Escaping of free text
   await p.fill('#custom-intervention-input', '<b>K+</b> 7.1');
   await p.click('#add-intervention-btn');
