@@ -183,7 +183,12 @@ for (const file of FILES) {
   await p.clock.runFor(31000);
   await p.click('#neo-hr-lt60-btn');
   check((await text(p, '#guidance-content')).includes('Give adrenaline 70 mcg'), 'NEO: adrenaline 20 mcg/kg prompted after compressions fail');
-  check((await text(p, '#patient-info-display')).includes('Glucose 10%: 8.8 ml (2.5 ml/kg)'), 'NEO glucose 2.5 ml/kg');
+  check((await text(p, '#patient-info-display')).includes('Glucose 10%: 7 ml (2 ml/kg'), 'NEO glucose 2 ml/kg (RCUK 2025)');
+  await p.click('button[data-drug="adrenaline"]');
+  for (let i = 0; i < 7; i++) { await p.clock.runFor(31000); await p.click('#neo-hr-lt60-btn'); } // ~3.6 min after the dose
+  check(!(await text(p, '#guidance-content')).includes('Give adrenaline'), 'NEO: repeat adrenaline not due before 4 min (RCUK 2025)');
+  await p.clock.runFor(31000); await p.click('#neo-hr-lt60-btn'); // ~4.1 min
+  check((await text(p, '#guidance-content')).includes('repeat dose due'), 'NEO: repeat adrenaline due every 4 min (RCUK 2025)');
   check(p.errs.length === 0, 'no page errors (NEO)', p.errs.join(' | '));
 
   // --- Paediatric doses
@@ -212,6 +217,25 @@ for (const file of FILES) {
   check((await text(p, '#summary-content')).includes('Glucose ×1'), 'glucose appears in summary totals');
   await closeModal(p);
 
+  // --- Paediatric shockable (RCUK 2025 PLS): 2nd amiodarone max 150 mg; energy escalates from the 5th shock
+  p = await fresh();
+  await p.click('button[data-mode="PAEDS"]');
+  await p.fill('#input-weight', '50'); await p.locator('#input-weight').blur();
+  await p.click('#start-arrest-btn');
+  for (let i = 0; i < 5; i++) {
+    await p.click('#rhythm-vf-btn');
+    const eg = await text(p, '#guidance-content');
+    if (i === 0) check(eg.includes('adult dose') && !eg.includes('escalate'), 'paeds 1st shock: 4 J/kg capped at adult dose', eg);
+    if (i === 4) check(eg.includes('escalate stepwise up to 360 J'), 'paeds 5th shock: escalate up to 8 J/kg, max 360 J', eg);
+    await p.click('#deliver-shock-btn');
+    if (i === 2) {
+      check((await text(p, '#guidance-content')).includes('Give amiodarone 250 mg'), 'paeds 1st amiodarone 5 mg/kg after 3rd shock');
+      await p.click('button[data-drug="amiodarone"]');
+    }
+    if (i < 4) await p.clock.runFor(121000);
+  }
+  check((await text(p, '#guidance-content')).includes('Give amiodarone 150 mg (2nd dose)'), 'paeds 2nd amiodarone capped at 150 mg');
+
   // --- Weight does not leak across protocols
   p = await fresh();
   await p.click('button[data-mode="PAEDS"]');
@@ -230,6 +254,125 @@ for (const file of FILES) {
   await p.click('#guidance-tab');
   await p.click('#rhythm-pea-btn');
   check((await text(p, '#guidance-content')).includes('withhold adrenaline'), 'hypothermia < 30: adrenaline withheld');
+  {
+    const q = await fresh();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]'); await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    const hg = await text(q, '#guidance-content');
+    check(hg.includes('Give amiodarone 300 mg') && hg.includes('loading dose') && !hg.includes('Give adrenaline'), 'hypothermia < 30 (RCUK 2025): amiodarone loading dose, adrenaline withheld', hg);
+  }
+
+  // --- Paediatric hypothermia (RCUK 2025 PLS): < 30 °C single adrenaline dose, no amiodarone; 30–35 °C every 8 min
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]');
+    const card = await text(q, '[data-circ="hypothermia-severe"]');
+    check(card.includes('Paediatric') && card.includes('single dose of adrenaline (200 mcg') && card.includes('Do not give amiodarone'), 'PLS hypothermia < 30 card: paediatric rules with weight-based dose', card);
+    await q.click('#guidance-tab');
+    await q.click('#rhythm-pea-btn');
+    let hg = await text(q, '#guidance-content');
+    check(hg.includes('Give adrenaline 200 mcg') && hg.includes('single dose'), 'PLS hypothermia < 30: one adrenaline dose prompted', hg);
+    await q.click('button[data-drug="adrenaline"]');
+    await q.clock.runFor(100000);
+    hg = await text(q, '#guidance-content');
+    check(hg.includes('single adrenaline dose given') && !hg.includes('Give adrenaline'), 'PLS hypothermia < 30: no further adrenaline after the single dose', hg);
+    await q.clock.runFor(21000); await q.click('#rhythm-pea-btn'); await q.clock.runFor(300000);
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'PLS hypothermia < 30: adrenaline never falls due again');
+    await q.click('button[data-drug="adrenaline"]');
+    check((await log(q)).some(m => m.includes('single adrenaline dose')), 'PLS hypothermia < 30: a 2nd dose is flagged');
+    check(q.errs.length === 0, 'no page errors (PLS hypothermia < 30)', q.errs.join(' | '));
+  }
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-severe"]'); await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    const hg = await text(q, '#guidance-content');
+    check(!hg.includes('Give amiodarone') && hg.includes('no amiodarone until') && hg.includes('Give adrenaline 200 mcg') && hg.includes('no further shocks'), 'PLS hypothermia < 30 shockable: adrenaline once, no amiodarone, max 3 shocks', hg);
+  }
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-moderate"]');
+    const card = await text(q, '[data-circ="hypothermia-moderate"]');
+    check(card.includes('every 8 min (6–10 min)') && card.includes('100 mg') && card.includes('after 8 min'), 'PLS hypothermia 30–35 card: 8-min adrenaline, 2nd amiodarone after 8 min', card);
+    await q.click('#guidance-tab');
+    for (let i = 0; i < 3; i++) { await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); if (i < 2) await q.clock.runFor(121000); }
+    await q.click('button[data-drug="adrenaline"]'); await q.click('button[data-drug="amiodarone"]');
+    await q.clock.runFor(121000); await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn');
+    await q.clock.runFor(121000); await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn'); // 5th shock, ~4 min after amiodarone
+    let hg = await text(q, '#guidance-content');
+    check(!hg.includes('Give amiodarone') && !hg.includes('Give adrenaline'), 'PLS hypothermia 30–35: nothing due at 4 min (not the 5th-shock rule)', hg);
+    await q.clock.runFor(130000); // ~6.2 min
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'PLS hypothermia 30–35: adrenaline not due at 6 min (adult interval not used)');
+    await q.click('#rhythm-vf-btn'); await q.click('#deliver-shock-btn');
+    await q.clock.runFor(110000); // ~8.1 min
+    hg = await text(q, '#guidance-content');
+    check((await text(q, '#timer-subline')).includes('DUE') && hg.includes('every 8 min (6–10 min)'), 'PLS hypothermia 30–35: adrenaline due at 8 min', hg);
+    check(hg.includes('Give amiodarone 100 mg (2nd dose)') && hg.includes('8 min after 1st dose'), 'PLS hypothermia 30–35: 2nd amiodarone 8 min after the 1st', hg);
+    await q.click('button[data-drug="adrenaline"]'); await q.clock.runFor(60000); await q.click('button[data-drug="adrenaline"]');
+    check((await log(q)).some(m => m.includes('recommended interval 8 min (6–10 min)')), 'PLS hypothermia 30–35: early dose warns with the 8-min interval');
+  }
+  {
+    // Adult hypothermia 30–35 °C keeps the 6-minute interval
+    const q = await fresh();
+    await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hypothermia-moderate"]'); await q.click('#guidance-tab');
+    await q.click('#rhythm-pea-btn'); await q.click('button[data-drug="adrenaline"]');
+    await q.clock.runFor(121000); await q.click('#rhythm-pea-btn'); await q.clock.runFor(120000); await q.click('#rhythm-pea-btn');
+    await q.clock.runFor(100000);
+    check(!(await text(q, '#timer-subline')).includes('DUE'), 'adult hypothermia 30–35: adrenaline not due at 5.7 min');
+    await q.clock.runFor(22000); await q.click('#rhythm-pea-btn');
+    check((await text(q, '#timer-subline')).includes('DUE') && (await text(q, '#guidance-content')).includes('every 6–10 min'), 'adult hypothermia 30–35: adrenaline due at 6 min (unchanged)');
+  }
+
+  // --- Special Circs cards in PLS / NLS mode: paediatric doses from the weight, never adult doses
+  {
+    const q = await fresh();
+    await q.click('button[data-mode="PAEDS"]');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hyperkalaemia"]');
+    let hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('0.1 units/kg, max 10 units') && hk.includes('Enter the weight'), 'PLS hyperkalaemia without weight: per-kg doses', hk);
+    await q.click('#guidance-tab');
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('insulin 2 units (0.1 units/kg, max 10 units)') && hk.includes('10% glucose 100 ml (5 ml/kg, max 250 ml)') && hk.includes('salbutamol 100 mcg'), 'PLS hyperkalaemia at 20 kg: insulin 2 units + 10% glucose 100 ml', hk);
+    check(hk.includes('Do not use calcium') && !hk.includes('calcium chloride') && !hk.includes('bicarbonate') && !hk.includes('25 g'), 'PLS hyperkalaemia: no adult calcium/bicarbonate/glucose doses', hk);
+    await q.fill('#input-weight', '120'); await q.locator('#input-weight').blur();
+    hk = await text(q, '[data-circ="hyperkalaemia"]');
+    check(hk.includes('insulin 10 units') && hk.includes('glucose 250 ml'), 'PLS hyperkalaemia: insulin and glucose capped (10 units, 250 ml)', hk);
+    await q.fill('#input-weight', '20'); await q.locator('#input-weight').blur();
+    await q.click('#special-circs-tab');
+    for (const id of ['pe', 'trauma', 'anaphylaxis', 'pregnancy', 'toxins', 'asthma', 'drowning']) await q.click(`[data-circ="${id}"]`);
+    const all = await text(q, '#special-circs-content');
+    check(all.includes('alteplase 6–10 mg (0.3–0.5 mg/kg, max 50 mg)') && all.includes('Tranexamic acid 300–400 mg') && all.includes('cardiac arrest dose: 200 mcg') && all.includes('200 ml (10 ml/kg) boluses'), 'PLS cards: weight-based alteplase, tranexamic acid, adrenaline and fluid', all);
+    check(!all.includes('1mg IV') && !all.includes('ALS doses') && !all.includes('calcium chloride'), 'PLS cards: no adult doses', all);
+    check((await text(q, '[data-circ="pregnancy"]')).includes('Adult guidance – no separate RCUK paediatric guidance'), 'PLS pregnancy card labelled as adult guidance');
+    await q.click('#guidance-tab'); await q.click('#start-arrest-btn');
+    await q.click('#special-circs-tab'); await q.click('[data-circ="pe"]'); await q.click('[data-circ="pregnancy"]');
+    await q.click('#guidance-tab'); await q.click('#rhythm-pea-btn');
+    const g = await text(q, '#guidance-content');
+    check(g.includes('PE: consider thrombolysis, e.g. alteplase 6–10 mg') && !g.includes('60–90 min'), 'PLS PE prompt: paediatric alteplase dose', g);
+    check(g.includes('perimortem delivery if no ROSC by 4 min'), 'pregnancy 4-min prompt unchanged');
+    check(q.errs.length === 0, 'no page errors (PLS special circs)', q.errs.join(' | '));
+  }
+  {
+    const q = await fresh();
+    await q.click('#special-circs-tab'); await q.click('[data-circ="hyperkalaemia"]');
+    check((await text(q, '[data-circ="hyperkalaemia"]')).includes('Insulin 10 units (soluble) + glucose 25 g'), 'adult hyperkalaemia card unchanged');
+    await q.click('#guidance-tab'); await q.click('button[data-mode="NEO"]'); await q.click('#special-circs-tab');
+    for (const id of ['hypothermia-severe', 'anaphylaxis', 'pe']) await q.click(`[data-circ="${id}"]`);
+    const neo = await text(q, '#special-circs-content');
+    check(neo.includes('Not part of the RCUK newborn life support') && !/\d+ ?(mg|units|mmol|mcg|ml)\b/.test(neo), 'NLS mode: Special Circs cards show no adult or paediatric doses', neo);
+  }
 
   // --- Escaping of free text
   await p.fill('#custom-intervention-input', '<b>K+</b> 7.1');

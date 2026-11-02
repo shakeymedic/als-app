@@ -421,24 +421,42 @@
 
         // --- Special Circumstances (RCUK) ---
         const specialCircumstances = [
-            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline and amiodarone until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECLS.' },
-            { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.' },
-            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.' },
-            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'Calcium chloride 10% 10 ml IV. Insulin 10 units + glucose 25 g IV. Consider sodium bicarbonate 50 mmol (severe acidosis / renal failure). Consider dialysis.' },
-            { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.' },
-            { id: 'trauma', name: 'Traumatic arrest', guidance: 'Treat reversible causes simultaneously: haemorrhage control & volume, oxygenation, bilateral thoracostomies (tension), resuscitative thoracotomy (tamponade). Compressions must not delay these.' },
-            { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.' },
-            { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.' },
-            { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.' },
-            { id: 'drowning', name: 'Drowning', guidance: 'Hypoxic arrest: prioritise oxygenation and ventilation (5 initial rescue breaths). Consider hypothermia.' }
+            // guidance: adult (RCUK 2025 ALS / special circumstances). paeds(): RCUK 2025 PLS wording, with doses
+            // worked out from the entered weight. paedsAdult: no paediatric equivalent, adult guidance shown and labelled.
+            { id: 'hypothermia-severe', name: 'Hypothermia < 30 °C', guidance: 'Withhold adrenaline until > 30 °C (then 1 mg). If shockable, give one amiodarone 300 mg loading dose; delay further doses until > 30 °C. If VF persists after 3 shocks, delay further shocks until > 30 °C. Active rewarming; consider ECPR (VA-ECMO).',
+                kg: true,
+                paeds: () => `Give a single dose of adrenaline (${adrenalineDoseText()}) unless planning immediate initiation of extracorporeal life support. Do not give amiodarone until > 30 °C. Shockable rhythm: give a maximum of three shocks; if ineffective, delay further attempts until > 30 °C. Rewarm: < 32 °C use active external and internal rewarming, including extracorporeal techniques. Consider transport to a centre for extracorporeal life support.` },
+            { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.',
+                kg: true,
+                paeds: () => `Adrenaline ${adrenalineDoseText()} every 8 min (6–10 min). Second dose of amiodarone (${state.wetflag ? `${paedsAmio2(state.wetflag)} mg; ` : ''}5 mg/kg, max 150 mg) after 8 min. Normal defibrillation interval (every 2 min). Rewarm: > 32 °C external rewarming; < 32 °C active external and internal rewarming, including extracorporeal techniques.` },
+            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
+                paedsAdult: true },
+            { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.',
+                kg: true,
+                paeds: () => `Cardiac arrest from severe hyperkalaemia (usually > 6.5–7 mmol/L): short-acting insulin ${kgDose(0.1, 'units', 10)} with 10% glucose ${kgDose(5, 'ml', 250)} as an IV bolus, then monitor potassium and glucose and give a glucose-containing infusion as needed. IV/IO short-acting beta2 agonist infusion, e.g. salbutamol ${kgDose(5, 'mcg')}. Do not use calcium in children in cardiac arrest. Consider extracorporeal potassium removal; consider ECPR.` },
+            { id: 'pe', name: 'Pulmonary embolism', guidance: 'Consider thrombolysis. If thrombolysis given, continue CPR for 60–90 min before stopping.',
+                kg: true,
+                paeds: () => `Consider thrombolysis, e.g. IV alteplase ${kgRange(0.3, 0.5, 'mg', 50)} over 2 min; may be repeated after 15 min. Consider extracorporeal life support and surgical embolectomy if thrombolysis fails.` },
+            { id: 'trauma', name: 'Traumatic arrest', guidance: 'Treat reversible causes simultaneously: haemorrhage control & volume, oxygenation, bilateral thoracostomies (tension), resuscitative thoracotomy (tamponade). Compressions must not delay these.',
+                kg: true,
+                paeds: () => `Treat reversible causes (HOTT: Hypotension, Oxygenation, Tension pneumothorax, cardiac Tamponade) first or alongside compressions and adrenaline. Jaw thrust with minimal spinal movement; ventilate and intubate if competent. Stop external bleeding; fluid replacement with early blood products (haemorrhagic shock: minimise crystalloid boluses, max ${kgDose(20, 'ml')}). Tranexamic acid ${kgRange(15, 20, 'mg', 1000)} IV over 10 min if transfusion needed. Bilateral thoracostomies. Resuscitative thoracotomy (if competent) for tamponade.` },
+            { id: 'toxins', name: 'Toxins', guidance: 'Consult Toxbase. Consider specific antidotes. Prolonged CPR.',
+                paeds: () => 'Standard PLS. Consult a regional or national poisons centre (e.g. Toxbase); give antidotes where available. Exclude reversible causes, including electrolyte abnormalities. Be prepared to continue resuscitation for a prolonged period. Consider ECPR if conventional CPR is failing.' },
+            { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.',
+                kg: true,
+                paeds: () => `Adrenaline IV/IO bolus, cardiac arrest dose: ${adrenalineDoseText()}. Aggressive fluid resuscitation: ${kgDose(10, 'ml')} boluses. Consider prolonged resuscitation / ECPR.` },
+            { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.',
+                paeds: () => 'Ventilate with 100% oxygen. Exclude tension pneumothorax (needle thoracocentesis). Consider extracorporeal life support in near-fatal asthma.' },
+            { id: 'drowning', name: 'Drowning', guidance: 'Hypoxic arrest: prioritise oxygenation and ventilation (5 initial rescue breaths). Consider hypothermia.',
+                paeds: () => 'Start with 5 rescue breaths; give 100% oxygen as soon as available and intubate if competent. Standard PLS with extra attention to reversing hypoxia and hypothermia. Consider ECPR if conventional CPR is failing.' }
         ];
 
         const reversibleCauses = [
             { id: 'hypoxia', name: 'Hypoxia' },
             { id: 'hypovolaemia', name: 'Hypovolaemia' },
-            { id: 'hypo-hyperkalaemia', name: 'Hypo/Hyperkalaemia' },
-            { id: 'hypothermia', name: 'Hypothermia' },
-            { id: 'thrombosis', name: 'Thrombosis' },
+            { id: 'hypo-hyperkalaemia', name: 'Hyper/hypokalaemia & metabolic' },
+            { id: 'hypothermia', name: 'Hypo/hyperthermia' },
+            { id: 'thrombosis', name: 'Thrombosis (coronary/pulmonary)' },
             { id: 'tamponade', name: 'Tamponade (Cardiac)' },
             { id: 'toxins', name: 'Toxins' },
             { id: 'tension-pneumo', name: 'Tension Pneumothorax' },
@@ -473,7 +491,7 @@
             return {
                 weight: +w.toFixed(1),
                 energy,
-                energyText: energy >= 150 ? `150–200 J (adult dose; 4 J/kg = ${energy} J)` : `${energy} J (4 J/kg)`,
+                energyText: energy >= 120 ? `120–200 J (adult dose, per defibrillator; 4 J/kg = ${energy} J)` : `${energy} J (4 J/kg)`,
                 adrenaline_mcg: adrMcg,
                 adrenaline_vol: (adrMcg / 100).toFixed(2),
                 adrCapped: w * 10 > 1000,
@@ -485,11 +503,33 @@
             };
         };
 
+        // RCUK 2025 PLS: from the 5th shock escalate stepwise up to 8 J/kg (max 360 J); 2nd amiodarone dose max 150 mg.
+        // Worked out from the weight so records saved by older versions still show them.
+        const paedsEnergyMax = wf => Math.min(Math.round(wf.weight * 8), 360);
+        const paedsAmio2 = wf => Math.min(Math.round(wf.weight * 5), 150);
+
+        // Weight-based doses for the paediatric Special Circs cards: "2 units (0.1 units/kg, max 10 units)";
+        // without a weight only the per-kg dose is shown.
+        const fmtDose = v => v < 1 ? +v.toFixed(2) : (v < 10 ? +v.toFixed(1) : Math.round(v));
+        const kgDose = (perKg, unit, max = null) => {
+            const w = state.wetflag ? state.wetflag.weight : null;
+            const per = `${perKg} ${unit}/kg${max !== null ? `, max ${max} ${unit}` : ''}`;
+            if (!w) return per;
+            return `${fmtDose(max !== null ? Math.min(w * perKg, max) : w * perKg)} ${unit} (${per})`;
+        };
+        const kgRange = (lo, hi, unit, max) => {
+            const w = state.wetflag ? state.wetflag.weight : null;
+            const per = `${lo}–${hi} ${unit}/kg, max ${max} ${unit}`;
+            if (!w) return per;
+            const a = fmtDose(Math.min(w * lo, max)), b = fmtDose(Math.min(w * hi, max));
+            return `${a === b ? a : `${a}–${b}`} ${unit} (${per})`;
+        };
+
         const neoDoses = (w) => ({
             adrenaline_mcg: Math.round(w * 20),
             adrenaline_vol: (w * 0.2).toFixed(2),
             fluids: Math.round(w * 10),
-            glucose: +(w * 2.5).toFixed(1),
+            glucose: +(w * 2).toFixed(1),
             tube: w < 1 ? '2.5' : (w < 2 ? '3.0' : (w < 3 ? '3.0–3.5' : '3.5')),
             depth: (w + 6).toFixed(1)
         });
@@ -502,7 +542,7 @@
                 `Weight: ${wf.weight} kg (${state.weightSource || 'entered'})${state.patientAge !== null ? ` | Age: ${state.patientAge} yr` : ''}`,
                 `Energy: ${wf.energyText}`,
                 `Adrenaline: ${wf.adrenaline_mcg} mcg = ${wf.adrenaline_vol} ml of 1:10,000 (10 mcg/kg${wf.adrCapped ? ', capped at 1 mg' : ''})`,
-                `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})`,
+                `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})${paedsAmio2(wf) < wf.amiodarone ? `; 2nd dose ${paedsAmio2(wf)} mg (max 150 mg)` : ''}`,
                 `Fluid bolus: ${wf.fluids} ml (10 ml/kg)`,
                 `Glucose 10%: ${wf.glucose} ml (2 ml/kg)`,
                 wf.tube ? `ETT: uncuffed ${wf.tube.uncuffed} mm / cuffed ${wf.tube.cuffed} mm${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
@@ -514,7 +554,7 @@
                 `Weight: ${w} kg (${state.weightSource || 'assumed'})`,
                 `Adrenaline IV: ${d.adrenaline_mcg} mcg = ${d.adrenaline_vol} ml of 1:10,000 (20 mcg/kg)`,
                 `Volume: ${d.fluids} ml (10 ml/kg)`,
-                `Glucose 10%: ${d.glucose} ml (2.5 ml/kg)`,
+                `Glucose 10%: ${d.glucose} ml (2 ml/kg, if blood glucose low)`,
                 `ETT: ${d.tube} mm @ ${d.depth} cm at lip (weight + 6)`
             ];
         };
@@ -772,13 +812,21 @@
             return null;
         };
 
-        const lastAdrenalineTime = () => {
+        const lastDrugTime = (key) => {
             for (let i = state.log.length - 1; i >= 0; i--) {
                 const e = state.log[i];
-                if (e.key === 'adrenaline' && !e.voided) return e.t;
+                if (e.key === key && !e.voided) return e.t;
             }
             return null;
         };
+        const lastAdrenalineTime = () => lastDrugTime('adrenaline');
+
+        // Adrenaline repeat interval (seconds). Hypothermia 30–35 °C: adult (RCUK 2025 special circumstances)
+        // "Increase administration intervals for adrenaline to 6-10 min"; paediatric (RCUK 2025 PLS)
+        // "adrenaline IV/IO every 8 min (6-10 min)".
+        const adrenalineInterval = () => state.mode === 'NEO' ? 240
+            : (state.specialCircs['hypothermia-moderate'] ? (state.mode === 'PAEDS' ? 480 : 360) : 180);
+        const INTERVAL_TEXT = { 480: '8 min (6–10 min)', 360: '6–10 min', 240: '4 min', 180: '3–5 min' };
 
         const arrestSeconds = (now = Date.now()) => {
             if (!state.startTime) return 0;
@@ -814,23 +862,29 @@
             const preArrival = count > 0 && last === null && !!state.startTime;
             const since = last ? (now - last) / 1000 : (preArrival ? (now - state.startTime) / 1000 : null);
             const sc = state.specialCircs;
-            const interval = sc['hypothermia-moderate'] ? 360 : 180;
+            const interval = adrenalineInterval();
             const res = { due: false, reason: '', count, since, interval, withheld: false, preArrival };
             if (state.outcome !== 'ONGOING') return res;
-            if (state.mode !== 'NEO' && sc['hypothermia-severe']) { res.withheld = true; return res; }
+            // Hypothermia < 30 °C. Adult (RCUK 2025 special circumstances): no adrenaline until > 30 °C.
+            // Paediatric (RCUK 2025 PLS): "give a single dose of adrenaline unless planning immediate
+            // initiation of extracorporeal life support".
+            const hypoSingle = state.mode === 'PAEDS' && sc['hypothermia-severe'];
+            if (state.mode === 'ADULT' && sc['hypothermia-severe']) { res.withheld = true; return res; }
+            if (hypoSingle && count > 0) { res.withheld = true; return res; }
             if (state.mode === 'NEO') {
                 if (state.neoCprCycles >= 2) {
                     if (count === 0) { res.due = true; res.reason = 'HR < 60 despite compressions'; }
-                    else if (since !== null && since >= interval) { res.due = true; res.reason = 'repeat every 3–5 min'; }
+                    else if (since !== null && since >= interval) { res.due = true; res.reason = 'repeat every 4 min'; }
                 }
                 return res;
             }
             if (count === 0) {
                 if (state.currentRhythm === 'NON_SHOCKABLE') { res.due = true; res.reason = 'non-shockable: give as soon as possible'; }
                 else if (state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) { res.due = true; res.reason = 'after 3rd shock'; }
+                if (res.due && hypoSingle) res.reason += '; hypothermia < 30 °C: single dose only, unless immediate ECLS planned';
             } else if (since !== null && since >= interval) {
                 res.due = true;
-                res.reason = interval === 360 ? 'hypothermia 30–35 °C: every 6–10 min' : 'every 3–5 min';
+                res.reason = interval === 180 ? 'every 3–5 min' : `hypothermia 30–35 °C: every ${INTERVAL_TEXT[interval]}`;
                 if (preArrival) res.reason += ' – last dose given before arrival';
             }
             return res;
@@ -852,24 +906,37 @@
             if (state.mode === 'NEO') {
                 if (state.neoPhase === 'VENT') {
                     li('text-blue-600 font-semibold', 'Watch for chest movement with each breath');
-                    li('', 'SpO₂ targets (pre-ductal): 2 min 65% · 5 min 85% · 10 min 90%');
+                    li('', 'Acceptable pre-ductal SpO₂: 3 min 70–75% · 5 min 80–85% · 10 min 85–95%');
                 } else {
                     li('text-blue-600 font-semibold', 'Increase oxygen to 100%');
                     if (!hasAdvancedAirway()) li('', 'Consider SGA or tracheal intubation');
                     if (state.neoCprCycles >= 2) {
                         li('text-purple-700 font-semibold', 'HR < 60: vascular access (UVC / IO) and drugs');
                         if (adr.due) li('text-purple-700 font-black text-2xl', `Give adrenaline ${adrenalineDoseText()}${adr.count ? ' – repeat dose due' : ''}`);
-                        li('', `Consider volume ${neoDoses(neoWeight()).fluids} ml (10 ml/kg) and glucose; pneumothorax, hypovolaemia, congenital abnormality`);
+                        li('', `Check blood glucose (give glucose only if low). Consider volume ${neoDoses(neoWeight()).fluids} ml (10 ml/kg); pneumothorax, hypovolaemia, congenital abnormality`);
                     }
                 }
             } else {
-                if (adr.withheld) li('text-sky-700 font-bold', 'Hypothermia < 30 °C: withhold adrenaline & amiodarone');
+                if (adr.withheld) li('text-sky-700 font-bold', state.mode === 'PAEDS'
+                    ? 'Hypothermia &lt; 30 °C: single adrenaline dose given – no further doses until &gt; 30 °C'
+                    : 'Hypothermia < 30 °C: withhold adrenaline until > 30 °C');
                 else if (adr.due) li('text-purple-700 font-black text-2xl', `Give adrenaline ${adrenalineDoseText()} <span class="font-semibold text-lg">(${adr.reason})</span>`);
 
-                if (!sc['hypothermia-severe'] && state.currentRhythm === 'SHOCKABLE') {
+                if (state.currentRhythm === 'SHOCKABLE') {
                     const paedsAmio = state.wetflag ? `${state.wetflag.amiodarone} mg` : '5 mg/kg (max 300 mg)';
-                    if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}`);
-                    else if (state.shocksDelivered >= 5 && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : paedsAmio + ' (2nd dose)'}`);
+                    // Hypothermia < 30 °C. Adult (RCUK 2025 special circumstances): one loading dose of amiodarone,
+                    // further doses delayed until > 30 °C. Paediatric (RCUK 2025 PLS): "Do not give amiodarone until
+                    // the temperature is above 30°C".
+                    const hypoSevere = !!sc['hypothermia-severe'];
+                    const paedsNoAmio = hypoSevere && state.mode === 'PAEDS';
+                    // Paediatric hypothermia 30–35 °C (RCUK 2025 PLS): "second dose amiodarone IV/IO after 8 min"
+                    const amioT = lastDrugTime('amiodarone');
+                    const paedsAmio8 = state.mode === 'PAEDS' && !!sc['hypothermia-moderate'] && amioT !== null;
+                    const amio2Due = paedsAmio8 ? (now - amioT) / 1000 >= 480 : state.shocksDelivered >= 5;
+                    if (paedsNoAmio) {
+                        if (state.shocksDelivered >= 3) li('text-sky-700 font-bold', 'Hypothermia &lt; 30 °C: no amiodarone until &gt; 30 °C');
+                    } else if (state.shocksDelivered >= 3 && state.counts.amiodarone === 0) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '300 mg' : paedsAmio}${hypoSevere ? ' <span class="font-semibold text-lg">(loading dose; no further doses until &gt; 30 °C)</span>' : ''}`);
+                    else if (!hypoSevere && amio2Due && state.counts.amiodarone === 1) li('text-orange-600 font-black text-2xl', `Give amiodarone ${state.mode === 'ADULT' ? '150 mg' : (state.wetflag ? `${paedsAmio2(state.wetflag)} mg` : '5 mg/kg (max 150 mg)') + ' (2nd dose)'}${paedsAmio8 ? ' <span class="font-semibold text-lg">(hypothermia 30–35 °C: 8 min after 1st dose)</span>' : ''}`);
                 }
                 if (state.mode === 'ADULT' && state.currentRhythm === 'SHOCKABLE' && state.shocksDelivered >= 3) {
                     li('text-blue-600 font-semibold', 'Consider changing pad position (e.g. anterior–posterior)');
@@ -879,7 +946,9 @@
                 }
                 if (state.mode === 'PAEDS' && state.counts.ett > 0) li('text-slate-600', 'Tube problems? DOPE (Displacement, Obstruction, Pneumothorax, Equipment)');
                 if (sc.pregnancy && arrestSeconds(now) < 600) li('text-pink-700 font-bold', `Pregnancy: perimortem delivery if no ROSC by 4 min (now T+${formatTime(arrestSeconds(now))})`);
-                if (sc.pe) li('text-slate-700', 'PE: if thrombolysed, continue CPR 60–90 min');
+                if (sc.pe) li('text-slate-700', state.mode === 'PAEDS'
+                    ? `PE: consider thrombolysis, e.g. alteplase ${esc(kgRange(0.3, 0.5, 'mg', 50))} IV over 2 min`
+                    : 'PE: if thrombolysed, continue CPR 60–90 min');
             }
             if (hasAdvancedAirway() && state.airwayCycle !== null && state.cycleCount - state.airwayCycle <= 1) {
                 li('text-slate-700', 'Confirm airway with waveform capnography');
@@ -908,12 +977,12 @@
             if (mode === 'NEO') {
                 protocolBadge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-700';
                 timerContainer.classList.add('border-pink-500');
-                link.href = 'https://www.resus.org.uk/sites/default/files/2025-11/RCUK%20G2025%20NEO%20NLS%20Oct%20V2%201.pdf';
+                link.href = 'https://www.resus.org.uk/sites/default/files/2026-03/RCUK%20G2025%20NEO%20NLS%20Mar%20V4.1.pdf';
                 linkText.innerText = 'NLS Guidelines 2025';
             } else if (mode === 'PAEDS') {
                 protocolBadge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-teal-100 text-teal-700';
                 timerContainer.classList.add('border-teal-500');
-                link.href = 'https://www.resus.org.uk/sites/default/files/2025-10/Paediatric%20advanced%20life%20support%20algorithm%202025.pdf';
+                link.href = 'https://www.resus.org.uk/sites/default/files/2025-12/Paediatric%20advanced%20life%20support%20algorithm%20Nov%202025%20V2.pdf';
                 linkText.innerText = 'PLS Guidelines 2025';
             } else {
                 protocolBadge.className = 'px-2 py-0.5 rounded text-xs font-bold uppercase bg-blue-100 text-blue-700';
@@ -935,6 +1004,7 @@
             }
             state.mode = mode;
             applyProtocolStyling();
+            renderSpecialCircs();
             updateUI();
         };
 
@@ -1000,7 +1070,9 @@
             } else if (state.mode === 'PAEDS' && state.wetflag) {
                 const wf = state.wetflag;
                 html += drugBtn('adrenaline', `Adrenaline ${wf.adrenaline_mcg} mcg (${wf.adrenaline_vol} ml 1:10,000)`, 'bg-purple-500 hover:bg-purple-600', `Adrenaline ${wf.adrenaline_mcg}mcg`, `(${wf.adrenaline_vol}ml of 1:10k${wf.adrCapped ? ', max' : ''})`);
-                html += drugBtn('amiodarone', `Amiodarone ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', max 300 mg' : ''})`, 'bg-orange-500 hover:bg-orange-600', `Amiodarone ${wf.amiodarone}mg`, wf.amioCapped ? '(max dose)' : '(5mg/kg)');
+                const amioDose = state.counts.amiodarone === 0 ? wf.amiodarone : paedsAmio2(wf);
+                const amioMax = state.counts.amiodarone === 0 ? (wf.amioCapped ? 300 : 0) : (wf.weight * 5 > 150 ? 150 : 0);
+                html += drugBtn('amiodarone', `Amiodarone ${amioDose} mg (5 mg/kg${amioMax ? `, max ${amioMax} mg` : ''})`, 'bg-orange-500 hover:bg-orange-600', `Amiodarone ${amioDose}mg`, amioMax ? '(max dose)' : '(5mg/kg)');
                 html += drugBtn('fluids', `Fluid ${wf.fluids} ml (10 ml/kg)`, 'bg-blue-500 hover:bg-blue-600', `Fluid ${wf.fluids}ml`, '(10ml/kg)');
                 html += drugBtn('glucose', `Glucose 10% ${wf.glucose} ml (2 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${wf.glucose}ml`, '(10%, 2ml/kg)');
             } else if (state.mode === 'PAEDS') {
@@ -1016,7 +1088,7 @@
                 const d = neoDoses(neoWeight());
                 html += drugBtn('adrenaline', `Adrenaline ${d.adrenaline_mcg} mcg IV (${d.adrenaline_vol} ml 1:10,000)`, 'bg-purple-500 hover:bg-purple-600', `Adrenaline ${d.adrenaline_vol}ml`, '(1:10,000, 20mcg/kg)');
                 html += drugBtn('fluids', `Volume ${d.fluids} ml (10 ml/kg)`, 'bg-blue-500 hover:bg-blue-600', `Volume ${d.fluids}ml`, '(10ml/kg)');
-                html += drugBtn('glucose', `Glucose 10% ${d.glucose} ml (2.5 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${d.glucose}ml`, '(10%, 2.5ml/kg)', true);
+                html += drugBtn('glucose', `Glucose 10% ${d.glucose} ml (2 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${d.glucose}ml`, '(10%, 2ml/kg, if low)', true);
             }
             interventionsButtonsGrid.innerHTML = html;
         };
@@ -1135,7 +1207,7 @@
                                 <li>Dry, stimulate, keep warm; assess tone, breathing, heart rate</li>
                                 <li>Open airway: neutral head position</li>
                                 <li><strong>5 inflation breaths</strong>: 2–3 s each, 30 cmH₂O (25 cmH₂O if &lt; 32 weeks)</li>
-                                <li>Start in air (≥ 32 weeks); 21–30% O₂ if 28–31 weeks; 30% if &lt; 28 weeks</li>
+                                <li>Start in 21% O₂ (air) if ≥ 32 weeks; ≥ 30% O₂ if &lt; 32 weeks</li>
                             </ul>
                             <button id="neo-inflation-btn" data-action="neo-inflation" class="mt-6 w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-5 px-4 rounded-lg text-xl shadow-lg">
                                 ${state.neoChestNotMoving ? 'Inflation breaths repeated' : 'Inflation breaths given'} → Reassess
@@ -1205,7 +1277,10 @@
                                 ${[150, 200, 360].map(j => `<button data-action="energy" data-energy="${j}" class="px-3 py-1 rounded-full border ${state.shockEnergy === j ? 'bg-red-600 text-white border-red-600' : 'bg-white text-slate-600 border-slate-300'}">${j} J</button>`).join('')}
                             </div>`;
                     } else {
-                        energyHtml = `<p class="text-xl text-slate-600 mb-6">Energy: <strong>${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</strong></p>`;
+                        const escalate = state.shocksDelivered + 1 >= 5; // RCUK 2025 PLS: from 5th shock escalate stepwise to 8 J/kg (max 360 J)
+                        energyHtml = escalate
+                            ? `<p class="text-xl text-slate-600 mb-6">Energy: <strong>refractory VF/pVT – escalate stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J (8 J/kg, max 360 J)` : '8 J/kg (max 360 J)'}</strong><span class="block text-base">1st shock was ${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</span></p>`
+                            : `<p class="text-xl text-slate-600 mb-6">Energy: <strong>${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</strong></p>`;
                     }
                     const hypoWarn = state.specialCircs['hypothermia-severe'] && state.shocksDelivered >= 3;
                     content = `
@@ -1229,7 +1304,9 @@
                         subText = 'Reassess heart rate every 30 s';
                     } else if (airway) {
                         cprText = 'Continuous Compressions';
-                        subText = 'Ventilations independent of compressions (appropriate rate)';
+                        subText = mode === 'PAEDS'
+                            ? 'Ventilate without pausing compressions (breaths/min): infant 25 · 1–8 y 20 · 8–12 y 15 · &gt; 12 y 10'
+                            : 'Ventilate at 10 breaths/min without pausing compressions';
                     } else {
                         cprText = mode === 'PAEDS' ? '15:2 Ratio' : '30:2 Ratio';
                     }
@@ -1246,8 +1323,8 @@
                                 ${mode !== 'NEO' ? `
                                 <div id="cpr-causes-box" class="mt-3 text-left bg-indigo-50 px-3 py-2 rounded-lg border border-indigo-200 text-base text-indigo-900">
                                     <span class="font-bold">Check reversible causes:</span>
-                                    <span class="block sm:inline"><strong>4 Hs</strong> hypoxia · hypovolaemia · hypo/hyperkalaemia · hypothermia</span>
-                                    <span class="block"><strong>4 Ts</strong> thrombosis · tamponade · toxins · tension pneumothorax</span>
+                                    <span class="block sm:inline"><strong>4 Hs</strong> hypoxia · hypovolaemia · hyper/hypokalaemia &amp; other metabolic · hypo/hyperthermia</span>
+                                    <span class="block"><strong>4 Ts</strong> thrombosis (coronary/pulmonary) · tamponade · toxins · tension pneumothorax</span>
                                 </div>` : ''}
                             </div>
                         </div>`;
@@ -1271,9 +1348,9 @@
                             <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Post-Resuscitation Care (Child)</h3>
                             <ul class="list-disc list-inside text-sm text-slate-600 ml-2 space-y-1">
                                 <li>A/B: SpO₂ 94–98%, normocapnia; avoid hyperventilation</li>
-                                <li>C: Avoid hypotension (systolic BP &gt; 5th centile for age); fluids / inotropes</li>
+                                <li>C: Keep systolic and mean BP above the 10th percentile for age; fluids / vasoactive drugs</li>
                                 <li>D: Normoglycaemia; treat seizures</li>
-                                <li>E: Avoid fever (temperature ≤ 37.5 °C)</li>
+                                <li>E: Temperature control for at least 24 h; avoid fever for at least 72 h</li>
                                 <li>Contact paediatric critical care / retrieval</li>
                             </ul>`;
                     } else {
@@ -1281,13 +1358,13 @@
                             <h3 class="font-bold text-lg text-slate-700 border-b border-green-200 pb-1">Immediate Post-Resuscitation Care (ABCDE)</h3>
                             <div class="grid lg:grid-cols-2 gap-x-6 gap-y-3">
                             <div><p class="font-semibold text-slate-700">A - Airway</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Maintain patent airway.</li><li>Intubate if unconscious (avoid hyperventilation).</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">B - Breathing</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Aim SpO<sub>2</sub> 94-98%.</li><li>Aim normal PaCO<sub>2</sub> (4.5-6.0 kPa).</li><li>Protective lung ventilation strategy.</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">C - Circulation</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>12-lead ECG: Urgent PCI for STEMI?</li><li>Aim SBP &gt; 100 mmHg (MAP &gt; 65 mmHg).</li><li>Fluid bolus / Vasopressors (Noradrenaline).</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">B - Breathing</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Aim SpO<sub>2</sub> 94-98%.</li><li>Aim normal PaCO<sub>2</sub> (4.7-6.0 kPa).</li><li>Protective lung ventilation strategy.</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">C - Circulation</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>12-lead ECG: Urgent PCI for STEMI?</li><li>Aim SBP &gt; 100 mmHg or MAP &gt; 60-65 mmHg.</li><li>Fluid bolus / Vasopressors (Noradrenaline).</li></ul></div>
                             <div><p class="font-semibold text-slate-700">D - Disability</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Control Glucose (4-10 mmol/L).</li><li>Treat Seizures.</li><li>Sedation for shivering/agitation.</li></ul></div>
-                            <div><p class="font-semibold text-slate-700">E - Exposure / Temperature</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Targeted Temperature Management.</li><li>Maintain temp &le; 37.5&deg;C (prevent fever).</li></ul></div>
+                            <div><p class="font-semibold text-slate-700">E - Exposure / Temperature</p><ul class="list-disc list-inside text-sm text-slate-600 ml-2"><li>Temperature control if comatose (36-72 h).</li><li>Maintain temp &le; 37.5&deg;C (prevent fever).</li></ul></div>
                             </div>
                             <div class="mt-4 pt-4 border-t border-green-200">
-                                <a href="https://www.resus.org.uk/sites/default/files/2025-10/Adult%20post-resuscitation%20care%202025.pdf" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
+                                <a href="https://www.resus.org.uk/sites/default/files/2026-03/RCUK%20G2025%20ADULT%20PRC%20March%20V3.pdf" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors">
                                     <i data-lucide="external-link" class="w-4 h-4 mr-2"></i> View Full 2025 RCUK Post-ROSC Guide
                                 </a>
                             </div>`;
@@ -1586,7 +1663,9 @@
             state.counts.shocks++;
             let energy = '';
             if (state.mode === 'ADULT' && state.shockEnergy) energy = ` (${state.shockEnergy} J)`;
-            else if (state.mode === 'PAEDS') energy = state.wetflag ? ` (${state.wetflag.energyText})` : ' (4 J/kg)';
+            else if (state.mode === 'PAEDS') energy = state.shocksDelivered >= 5
+                ? ` (escalation from 5th shock, up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J / ` : ''}8 J/kg, max 360 J)`
+                : (state.wetflag ? ` (${state.wetflag.energyText})` : ' (4 J/kg)');
             addLog(`Shock ${state.shocksDelivered} delivered${energy}`, { type: 'shock' });
             handleStartCpr();
         };
@@ -1722,6 +1801,7 @@
             if (res) res.outerHTML = wetflagResultsHtml();
             renderInterventionButtons();
             updatePatientInfoDisplay();
+            renderSpecialCircs();
             save();
         };
 
@@ -2033,13 +2113,19 @@
                 const drugName = button.dataset.drugName || drug;
                 if (drug === 'adrenaline') {
                     const prev = lastAdrenalineTime();
-                    const interval = state.specialCircs['hypothermia-moderate'] ? 360 : 180;
+                    const interval = adrenalineInterval();
+                    const hypoSecond = state.mode === 'PAEDS' && state.specialCircs['hypothermia-severe'] && state.counts.adrenaline > 0;
                     state.counts.adrenaline++;
                     addLog(`${drugName} given`, { type: 'drug', key: drug });
-                    if (prev) {
+                    if (hypoSecond) {
+                        // RCUK 2025 PLS, hypothermia < 30 °C: "give a single dose of adrenaline"
+                        const warn = '⚠ Hypothermia < 30 °C: RCUK PLS advises a single adrenaline dose until > 30 °C';
+                        addLog(warn);
+                        showToast(warn);
+                    } else if (prev) {
                         const gap = Math.floor((Date.now() - prev) / 1000);
                         if (gap < interval) {
-                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${interval === 360 ? '6–10' : '3–5'} min)`;
+                            const warn = `⚠ Adrenaline given ${formatTime(gap)} after previous dose (recommended interval ${INTERVAL_TEXT[interval]})`;
                             addLog(warn);
                             showToast(warn);
                             renderInterventionButtons();
@@ -2147,6 +2233,21 @@
         });
 
         // Special circumstances
+        const circGuidance = (sc) => {
+            if (state.mode === 'NEO') {
+                return '<span class="block text-xs font-semibold text-pink-700 mt-2">Not part of the RCUK newborn life support (NLS) algorithm</span><p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">No adult or paediatric doses shown. Follow NLS and seek senior neonatal help.</p>';
+            }
+            if (state.mode === 'PAEDS' && sc.paeds) {
+                const tag = '<span class="block text-xs font-semibold text-teal-700 mt-2">Paediatric – RCUK 2025 PLS</span>';
+                const note = sc.kg && !state.wetflag ? ' Enter the weight for calculated doses.' : '';
+                return `${tag}<p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">${esc(sc.paeds() + note)}</p>`;
+            }
+            if (state.mode === 'PAEDS' && sc.paedsAdult) {
+                const tag = '<span class="block text-xs font-semibold text-amber-700 mt-2">Adult guidance – no separate RCUK paediatric guidance</span>';
+                return `${tag}<p class="text-lg text-slate-800 font-medium mt-1 leading-snug break-words">${esc(sc.guidance)}</p>`;
+            }
+            return `<p class="text-lg text-slate-800 font-medium mt-2 leading-snug break-words">${esc(sc.guidance)}</p>`;
+        };
         const renderSpecialCircs = () => {
             const cards = specialCircumstances.map(sc => {
                 const active = !!state.specialCircs[sc.id];
@@ -2157,7 +2258,7 @@
                             <span class="font-bold text-slate-700">${sc.name}</span>
                             ${active ? '<span class="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">ACTIVE</span>' : '<span class="text-xs text-slate-400">Tap to activate</span>'}
                         </div>
-                        ${active ? `<p class="text-lg text-slate-800 font-medium mt-2 leading-snug break-words">${sc.guidance}</p>` : ''}
+                        ${active ? circGuidance(sc) : ''}
                     </button>`;
             }).join('');
             specialCircsContent.innerHTML = `
