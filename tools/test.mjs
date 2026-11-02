@@ -217,7 +217,7 @@ for (const file of FILES) {
   check((await text(p, '#summary-content')).includes('Glucose ×1'), 'glucose appears in summary totals');
   await closeModal(p);
 
-  // --- Paediatric shockable (RCUK 2025 PLS): 2nd amiodarone max 150 mg; energy escalates from the 5th shock
+  // --- Paediatric shockable (RCUK 2025 PLS): 2nd amiodarone max 150 mg; energy escalates only when more than five shocks are needed (6th shock)
   p = await fresh();
   await p.click('button[data-mode="PAEDS"]');
   await p.fill('#input-weight', '50'); await p.locator('#input-weight').blur();
@@ -226,7 +226,7 @@ for (const file of FILES) {
     await p.click('#rhythm-vf-btn');
     const eg = await text(p, '#guidance-content');
     if (i === 0) check(eg.includes('adult dose') && !eg.includes('escalate'), 'paeds 1st shock: 4 J/kg capped at adult dose', eg);
-    if (i === 4) check(eg.includes('escalate stepwise up to 360 J'), 'paeds 5th shock: escalate up to 8 J/kg, max 360 J', eg);
+    if (i === 4) check(eg.includes('adult dose') && !eg.includes('increase stepwise'), 'paeds 5th shock: still 4 J/kg (refractory = more than five shocks)', eg);
     await p.click('#deliver-shock-btn');
     if (i === 2) {
       check((await text(p, '#guidance-content')).includes('Give amiodarone 250 mg'), 'paeds 1st amiodarone 5 mg/kg after 3rd shock');
@@ -235,6 +235,10 @@ for (const file of FILES) {
     if (i < 4) await p.clock.runFor(121000);
   }
   check((await text(p, '#guidance-content')).includes('Give amiodarone 150 mg (2nd dose)'), 'paeds 2nd amiodarone capped at 150 mg');
+  await p.clock.runFor(121000);
+  await p.click('#rhythm-vf-btn');
+  { const eg6 = await text(p, '#guidance-content');
+    check(eg6.includes('more than five shocks needed') && eg6.includes('increase stepwise up to 360 J'), 'paeds 6th shock: increase stepwise up to 8 J/kg, max 360 J', eg6); }
 
   // --- Weight does not leak across protocols
   p = await fresh();
