@@ -190,7 +190,7 @@
                 </a>
             </div>
         </div>
-        <span class="hidden lg:inline ml-auto mr-3 text-xs text-slate-400">&copy; WMEBEM 2025 · Dr Jake Turner</span>
+        <span class="hidden lg:inline ml-auto mr-3 text-xs text-slate-400">Supports, not replaces, clinical judgement · &copy; WMEBEM 2025 · Dr Jake Turner</span>
         <button id="reset-app-btn" class="shrink-0 text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300">
             New Patient
         </button>
@@ -296,7 +296,7 @@
                  </div>
                  <div class="mt-3 pt-3 border-t border-slate-200">
                      <div class="flex space-x-2">
-                         <input type="text" id="custom-intervention-input" placeholder="Add note to log..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2">
+                         <input type="text" id="custom-intervention-input" placeholder="Add note to log (no patient identifiers)..." class="flex-grow bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2">
                          <button id="add-intervention-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg shadow-sm flex items-center justify-center" aria-label="Add note">
                              <i data-lucide="plus" class="w-4 h-4 m-0"></i>
                          </button>
@@ -305,7 +305,7 @@
 
                  <div id="notes-container" class="mt-3 pt-3 border-t border-slate-200">
                      <h3 class="font-bold text-lg mb-2 text-center text-slate-600">Handover / Notes</h3>
-                     <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes..."></textarea>
+                     <textarea id="handover-notes" class="w-full h-24 bg-slate-100 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5" placeholder="Enter notes (no patient identifiers)..."></textarea>
                  </div>
             </div>
         </div>
@@ -313,7 +313,7 @@
     </div>
 
     <footer class="mt-2 mb-3 text-center text-xs text-slate-400 no-print">
-        An aid for trained staff. Not a medical device. &copy; 2025 West Midlands Evidence Based Emergency Medicine Ltd (EM Evidence). Made by Dr Jake Turner.
+        Supports, not replaces, clinical judgement. Follows Resuscitation Council UK 2025 guidelines. An aid for trained staff; not a medical device. &copy; 2025 West Midlands Evidence Based Emergency Medicine Ltd (EM Evidence). Made by Dr Jake Turner.
     </footer>
 
     <script>
@@ -1133,7 +1133,7 @@
                                     <i data-lucide="ambulance" class="mr-2"></i> Patient Arrived in Arrest
                                 </button>` : ''}
                             </div>
-                            <p class="start-disclaimer mt-2 text-xs leading-tight text-slate-500 text-center">Aid for trained staff (RCUK 2025). Not a medical device; follow local protocols and clinical judgement.</p>
+                            <p class="start-disclaimer mt-2 text-xs leading-tight text-slate-500 text-center">Supports, not replaces, clinical judgement. Follows Resuscitation Council UK 2025 guidelines. Aid for trained staff; not a medical device; follow local protocols.</p>
                         </div>`;
                     break;
                 }
@@ -1850,7 +1850,7 @@
                 </div>
                 ${section('Timeline', `<table class="w-full text-sm">${timeline().map(row).join('')}</table>`)}
                 <details class="record-details border-t border-slate-200 pt-3" ${detailsFilled() ? 'open' : ''}>
-                    <summary class="font-bold text-slate-700 cursor-pointer">Record details <span class="font-normal text-slate-400 text-xs">(optional – complete after the event)</span></summary>
+                    <summary class="font-bold text-slate-700 cursor-pointer">Record details <span class="font-normal text-slate-400 text-xs">(optional – complete after the event; no patient identifiers)</span></summary>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">${fields}</div>
                 </details>
                 ${entries.length ? section('Drugs, Shocks &amp; Interventions', `<table class="w-full text-sm">${entries.map(row).join('')}</table>${totals ? `<p class="text-xs text-slate-500 mt-2">Totals: ${totals}</p>` : ''}`) : ''}
