@@ -400,7 +400,7 @@
             { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.',
                 kg: true,
                 paeds: () => `Adrenaline ${adrenalineDoseText()} every 8 min (6–10 min). Second dose of amiodarone (${state.wetflag ? `${paedsAmio2(state.wetflag)} mg; ` : ''}5 mg/kg, max 150 mg) after 8 min. Normal defibrillation interval (every 2 min). Rewarm: > 32 °C external rewarming; < 32 °C active external and internal rewarming, including extracorporeal techniques.` },
-            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
+            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. Prepare for resuscitative hysterotomy from the start; if no ROSC, deliver as soon as possible after the 2nd CPR cycle if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
                 paedsAdult: true },
             { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.',
                 kg: true,
@@ -516,7 +516,7 @@
                 `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})${paedsAmio2(wf) < wf.amiodarone ? `; 2nd dose ${paedsAmio2(wf)} mg (max 150 mg)` : ''}`,
                 `Fluid bolus: ${wf.fluids} ml (10 ml/kg)`,
                 `Glucose 10%: ${wf.glucose} ml (2 ml/kg)`,
-                wf.tube ? `ETT: uncuffed ${wf.tube.uncuffed} mm / cuffed ${wf.tube.cuffed} mm${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
+                wf.tube ? `ETT: cuffed ${wf.tube.cuffed} mm (uncuffed ${wf.tube.uncuffed} mm)${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
             ];
         };
         const neoInfoLines = () => {
@@ -616,6 +616,9 @@
                 this.on = true;
                 this.next = c.currentTime + 0.1;
                 this.timer = setInterval(() => {
+                    // A locked screen or background tab slows timers to about once a second or less.
+                    // Skip the beats that were missed rather than playing them all at once.
+                    if (this.next < c.currentTime) this.next = c.currentTime + 0.05;
                     while (this.next < c.currentTime + 0.15) {
                         audio.beep(1000, 0.03, this.next, 0.3);
                         this.next += 60 / this.bpm;
@@ -916,7 +919,11 @@
                     li('text-sky-700 font-bold', 'Hypothermia < 30 °C: no further shocks until > 30 °C');
                 }
                 if (state.mode === 'PAEDS' && state.counts.ett > 0) li('text-slate-600', 'Tube problems? DOPE (Displacement, Obstruction, Pneumothorax, Equipment)');
-                if (sc.pregnancy && arrestSeconds(now) < 600) li('text-pink-700 font-bold', `Pregnancy: perimortem delivery if no ROSC by 4 min (now T+${formatTime(arrestSeconds(now))})`);
+                // RCUK 2025 special circumstances: prepare early, perform resuscitative hysterotomy as soon as possible.
+                // Local decision (Nov 2026): deliver as soon as possible after the 2nd CPR cycle.
+                if (sc.pregnancy) li('text-pink-700 font-bold', state.cycleCount >= 3
+                    ? `Pregnancy: no ROSC after 2 cycles – resuscitative hysterotomy now, deliver as soon as possible (T+${formatTime(arrestSeconds(now))})`
+                    : `Pregnancy: prepare for resuscitative hysterotomy now – deliver as soon as possible after the 2nd cycle if no ROSC (T+${formatTime(arrestSeconds(now))})`);
                 if (sc.pe) li('text-slate-700', state.mode === 'PAEDS'
                     ? `PE: consider thrombolysis, e.g. alteplase ${esc(kgRange(0.3, 0.5, 'mg', 50))} IV over 2 min`
                     : 'PE: if thrombolysed, continue CPR 60–90 min');

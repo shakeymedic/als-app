@@ -365,7 +365,10 @@ for (const file of FILES) {
     await q.click('#guidance-tab'); await q.click('#rhythm-pea-btn');
     const g = await text(q, '#guidance-content');
     check(g.includes('PE: consider thrombolysis, e.g. alteplase 6–10 mg') && !g.includes('60–90 min'), 'PLS PE prompt: paediatric alteplase dose', g);
-    check(g.includes('perimortem delivery if no ROSC by 4 min'), 'pregnancy 4-min prompt unchanged');
+    check(g.includes('prepare for resuscitative hysterotomy now – deliver as soon as possible after the 2nd cycle'), 'pregnancy prompt: prepare, deliver after 2nd cycle', g);
+    for (let i = 0; i < 2; i++) { await q.clock.runFor(121000); await q.click('#rhythm-pea-btn'); }
+    const g3 = await text(q, '#guidance-content');
+    check(g3.includes('no ROSC after 2 cycles – resuscitative hysterotomy now'), 'pregnancy prompt: hysterotomy now after the 2nd cycle', g3);
     check(q.errs.length === 0, 'no page errors (PLS special circs)', q.errs.join(' | '));
   }
   {
