@@ -545,7 +545,7 @@
                 `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})${paedsAmio2(wf) < wf.amiodarone ? `; 2nd dose ${paedsAmio2(wf)} mg (max 150 mg)` : ''}`,
                 `Fluid bolus: ${wf.fluids} ml (10 ml/kg)`,
                 `Glucose 10%: ${wf.glucose} ml (2 ml/kg)`,
-                wf.tube ? `ETT: uncuffed ${wf.tube.uncuffed} mm / cuffed ${wf.tube.cuffed} mm${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
+                wf.tube ? `ETT: cuffed ${wf.tube.cuffed} mm (uncuffed ${wf.tube.uncuffed} mm)${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
             ];
         };
         const neoInfoLines = () => {
@@ -645,6 +645,9 @@
                 this.on = true;
                 this.next = c.currentTime + 0.1;
                 this.timer = setInterval(() => {
+                    // A locked screen or background tab slows timers to about once a second or less.
+                    // Skip the beats that were missed rather than playing them all at once.
+                    if (this.next < c.currentTime) this.next = c.currentTime + 0.05;
                     while (this.next < c.currentTime + 0.15) {
                         audio.beep(1000, 0.03, this.next, 0.3);
                         this.next += 60 / this.bpm;
