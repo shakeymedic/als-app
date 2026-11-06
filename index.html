@@ -400,7 +400,7 @@
             { id: 'hypothermia-moderate', name: 'Hypothermia 30–35 °C', guidance: 'Double the interval between drug doses (adrenaline every 6–10 min). Active rewarming.',
                 kg: true,
                 paeds: () => `Adrenaline ${adrenalineDoseText()} every 8 min (6–10 min). Second dose of amiodarone (${state.wetflag ? `${paedsAmio2(state.wetflag)} mg; ` : ''}5 mg/kg, max 150 mg) after 8 min. Normal defibrillation interval (every 2 min). Rewarm: > 32 °C external rewarming; < 32 °C active external and internal rewarming, including extracorporeal techniques.` },
-            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. If no ROSC by 4 min, perimortem delivery (aim within 5 min) if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
+            { id: 'pregnancy', name: 'Pregnancy', guidance: 'Manual left uterine displacement. Prepare for resuscitative hysterotomy from the start; if no ROSC, deliver as soon as possible after the 2nd CPR cycle if uterus ≥ 20 weeks. Call obstetric + neonatal teams.',
                 paedsAdult: true },
             { id: 'hyperkalaemia', name: 'Hyperkalaemia', guidance: 'In hyperkalaemic cardiac arrest: calcium chloride 10% 10 ml IV and sodium bicarbonate 50 mmol IV (separate lines, or flush between). Insulin 10 units (soluble) + glucose 25 g IV. Consider dialysis.',
                 kg: true,
@@ -919,7 +919,11 @@
                     li('text-sky-700 font-bold', 'Hypothermia < 30 °C: no further shocks until > 30 °C');
                 }
                 if (state.mode === 'PAEDS' && state.counts.ett > 0) li('text-slate-600', 'Tube problems? DOPE (Displacement, Obstruction, Pneumothorax, Equipment)');
-                if (sc.pregnancy && arrestSeconds(now) < 600) li('text-pink-700 font-bold', `Pregnancy: perimortem delivery if no ROSC by 4 min (now T+${formatTime(arrestSeconds(now))})`);
+                // RCUK 2025 special circumstances: prepare early, perform resuscitative hysterotomy as soon as possible.
+                // Local decision (Nov 2026): deliver as soon as possible after the 2nd CPR cycle.
+                if (sc.pregnancy) li('text-pink-700 font-bold', state.cycleCount >= 3
+                    ? `Pregnancy: no ROSC after 2 cycles – resuscitative hysterotomy now, deliver as soon as possible (T+${formatTime(arrestSeconds(now))})`
+                    : `Pregnancy: prepare for resuscitative hysterotomy now – deliver as soon as possible after the 2nd cycle if no ROSC (T+${formatTime(arrestSeconds(now))})`);
                 if (sc.pe) li('text-slate-700', state.mode === 'PAEDS'
                     ? `PE: consider thrombolysis, e.g. alteplase ${esc(kgRange(0.3, 0.5, 'mg', 50))} IV over 2 min`
                     : 'PE: if thrombolysed, continue CPR 60–90 min');
