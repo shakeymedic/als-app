@@ -3,7 +3,6 @@
 // HALO QRH app. Build with ./gradlew bundleRelease (see android/README.md).
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
 }
 
 val webRoot = rootProject.file("..")
@@ -42,20 +41,20 @@ android {
         }
     }
 
-    sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/siteAssets"))
+    // A plain path (not a Provider): AGP 9 refuses Providers here. preBuild depends on copySite below.
+    sourceSets["main"].assets.directories.add(layout.buildDirectory.dir("generated/siteAssets").get().asFile.path)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "17" }
     buildFeatures { buildConfig = true }
 }
 
 // Copies the web app into the app's assets. In index.html it swaps the hotlinked logo for a bundled
 // copy, drops the service worker (the files are already on the phone) and loads android-bridge.js,
 // which gives the page spoken prompts and printing through Android (WebView has neither).
-val copySite by tasks.registering(Sync::class) {
+val copySite = tasks.register<Sync>("copySite") {
     from(webRoot) {
         include("index.html", "vendor/**", "icons/**")
         filesMatching("index.html") {
