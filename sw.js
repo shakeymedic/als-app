@@ -3,7 +3,7 @@
 // always gets the latest version; the cached copy is only used when the network fails
 // or takes more than a few seconds. Fonts and libraries from other sites are served
 // from the cache and refreshed in the background.
-const CACHE = 'als-app-v3';
+const CACHE = 'als-app-v4';
 const PRECACHE = [
   "./",
   "index.html",
@@ -11,8 +11,11 @@ const PRECACHE = [
   "vendor/tailwind.css",
   "vendor/icons.js",
   "manifest.webmanifest",
+  "sw-register.js",
   "icons/icon-192.png",
-  "icons/icon-512.png"
+  "icons/icon-512.png",
+  "icons/maskable-512.png",
+  "icons/apple-touch-icon.png"
 ];
 const NETWORK_TIMEOUT_MS = 4000;
 
