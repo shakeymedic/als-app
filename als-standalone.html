@@ -503,7 +503,7 @@
             };
         };
 
-        // RCUK 2025 PLS: increase the energy dose stepwise up to 8 J/kg (max 360 J) for refractory VF/pVT (more than five shocks needed); 2nd amiodarone dose max 150 mg.
+        // RCUK 2025 PLS: increase the energy dose stepwise up to 8 J/kg (max 360 J) for refractory VF/pVT (algorithm: from the 5th shock); 2nd amiodarone dose max 150 mg.
         // Worked out from the weight so records saved by older versions still show them.
         const paedsEnergyMax = wf => Math.min(Math.round(wf.weight * 8), 360);
         const paedsAmio2 = wf => Math.min(Math.round(wf.weight * 5), 150);
@@ -1284,9 +1284,9 @@
                                 ${[150, 200, 360].map(j => `<button data-action="energy" data-energy="${j}" class="px-3 py-1 rounded-full border ${state.shockEnergy === j ? 'bg-red-600 text-white border-red-600' : 'bg-white text-slate-600 border-slate-300'}">${j} J</button>`).join('')}
                             </div>`;
                     } else {
-                        const escalate = state.shocksDelivered + 1 >= 6; // RCUK 2025 PLS: refractory VF/pVT = more than five shocks needed, so escalation applies from the 6th shock
+                        const escalate = state.shocksDelivered + 1 >= 5; // RCUK 2025 PLS algorithm (Nov 2025 V2): "from 5th shock escalate stepwise to 8 J/kg (max 360 J)" – Jake's decision 8 Nov 2026 (the guideline text says more than five shocks)
                         energyHtml = escalate
-                            ? `<p class="text-xl text-slate-600 mb-6">Energy: <strong>refractory VF/pVT (more than five shocks needed) – increase stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J (8 J/kg, max 360 J)` : '8 J/kg (max 360 J)'}</strong><span class="block text-base">1st shock was ${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</span></p>`
+                            ? `<p class="text-xl text-slate-600 mb-6">Energy: <strong>refractory VF/pVT (from the 5th shock) – increase stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J (8 J/kg, max 360 J)` : '8 J/kg (max 360 J)'}</strong><span class="block text-base">1st shock was ${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</span></p>`
                             : `<p class="text-xl text-slate-600 mb-6">Energy: <strong>${state.wetflag ? esc(state.wetflag.energyText) : '4 J/kg'}</strong></p>`;
                     }
                     const hypoWarn = state.specialCircs['hypothermia-severe'] && state.shocksDelivered >= 3;
@@ -1670,8 +1670,8 @@
             state.counts.shocks++;
             let energy = '';
             if (state.mode === 'ADULT' && state.shockEnergy) energy = ` (${state.shockEnergy} J)`;
-            else if (state.mode === 'PAEDS') energy = state.shocksDelivered >= 6
-                ? ` (refractory VF/pVT, more than five shocks: stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J / ` : ''}8 J/kg, max 360 J)`
+            else if (state.mode === 'PAEDS') energy = state.shocksDelivered >= 5
+                ? ` (refractory VF/pVT, from the 5th shock: stepwise up to ${state.wetflag ? `${paedsEnergyMax(state.wetflag)} J / ` : ''}8 J/kg, max 360 J)`
                 : (state.wetflag ? ` (${state.wetflag.energyText})` : ' (4 J/kg)');
             addLog(`Shock ${state.shocksDelivered} delivered${energy}`, { type: 'shock' });
             handleStartCpr();
