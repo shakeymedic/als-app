@@ -4,4 +4,5 @@
     <string name="close">Close</string>
     <string name="stay">Stay</string>
     <string name="no_app_for_link">No app on this phone can open that link</string>
+    <string name="renderer_failed">The page stopped working twice. Please open the app again: the record is saved.</string>
 </resources>

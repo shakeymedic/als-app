@@ -222,6 +222,7 @@
                 <button id="sound-unlock" type="button" class="hidden mt-2 w-full bg-amber-500 hover:bg-amber-600 text-white text-base font-bold py-2 px-3 rounded-lg flex items-center justify-center">
                     <i data-lucide="volume-x" class="w-5 h-5 mr-2"></i> Tap here to turn sound on
                 </button>
+                <p id="sound-warning" role="alert" class="hidden mt-2 w-full bg-red-600 text-white text-base font-bold py-2 px-3 rounded-lg text-center"></p>
             </div>
 
             <div id="controls-panel" class="bg-white p-4 rounded-xl shadow-lg">
@@ -443,8 +444,12 @@
         // ---------------------------------------------------------------------------
         // Weight-based doses
         // ---------------------------------------------------------------------------
-        // APLS weight estimate: < 1 yr (0.5 x months) + 4; 1–5 yr (2 x age) + 8; 6–12 yr (3 x age) + 7
-        const estimateWeightFromAge = a => a < 1 ? 0.5 * (a * 12) + 4 : (a <= 5 ? 2 * a + 8 : 3 * a + 7);
+        // APLS weight estimate: < 1 yr (0.5 x months) + 4; 1–5 yr (2 x age) + 8; 6–12 yr (3 x age) + 7.
+        // "1–5 years" runs up to the 6th birthday, so a decimal age such as 5.5 uses the 1–5 formula
+        // (it used to switch at 5.0, which made 5.1 years 4 kg heavier than 5.0 years).
+        const estimateWeightFromAge = a => a < 1 ? 0.5 * (a * 12) + 4 : (a < 6 ? 2 * a + 8 : 3 * a + 7);
+        // The formulae are published for children up to 12 years; above that the estimate is a rough guide only.
+        const WEIGHT_FORMULA_MAX_AGE = 12;
 
         const paedsDoses = (weight, age) => {
             const w = Number(weight);
@@ -991,16 +996,40 @@
         // ---------------------------------------------------------------------------
         const infoGrid = (lines, cls) => `<div class="grid grid-cols-1 gap-y-0.5 ${cls}">${lines.map(l => `<div>${esc(l)}</div>`).join('')}</div>`;
 
+        // The quick-reference panel (PLS and NLS) shows the weight in use and lets it be corrected during the episode
+        let weightEditOpen = false;
+        const weightPanelHtml = (title, lines, neo) => {
+            const tone = neo ? 'text-pink-900' : 'text-teal-900', head = neo ? 'text-pink-800' : 'text-teal-800';
+            const btn = neo ? 'bg-pink-600 hover:bg-pink-700' : 'bg-teal-600 hover:bg-teal-700';
+            const editor = weightEditOpen ? `
+                <div id="weight-change" class="font-sans text-sm ${tone} bg-white border rounded-lg px-2 py-2 mb-1">
+                    <p class="font-semibold mb-1">Correct the weight. Doses already given stay as logged.</p>
+                    <div class="flex gap-2 justify-center">
+                        <input type="number" id="weight-change-input" placeholder="Weight (kg)" step="0.1" ${neo ? 'min="0.3" max="7"' : 'min="0.5" max="150"'} class="p-2 border rounded w-28 text-center text-slate-900">
+                        <button type="button" id="weight-change-set" class="${btn} text-white font-bold py-2 px-3 rounded shadow">Set</button>
+                        <button type="button" id="weight-change-cancel" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-3 rounded shadow">Cancel</button>
+                    </div>
+                </div>` : '';
+            const open = state.isArrestActive && !weightEditOpen
+                ? `<button type="button" id="weight-change-open" class="font-sans ${btn} text-white text-xs font-bold leading-5 px-2 rounded shadow whitespace-nowrap">Change weight</button>` : '';
+            return `<div class="flex items-center justify-between gap-2 mb-1"><span class="font-bold ${head} text-sm">${title}</span>${open}</div>${editor}${infoGrid(lines, tone)}`;
+        };
+
         const updatePatientInfoDisplay = () => {
             let html = '';
             if (state.startTime && state.mode === 'PAEDS' && state.wetflag) {
                 patientInfoDisplay.className = 'bg-white px-3 py-2 rounded-xl shadow-lg text-xs font-mono border-2 bg-teal-50 border-teal-300';
-                html = `<div class="font-bold text-teal-800 mb-1 text-center text-sm">WETFLAG Quick Reference</div>${infoGrid(paedsInfoLines(), 'text-teal-900')}`;
+                html = weightPanelHtml('WETFLAG Quick Reference', paedsInfoLines(), false);
             } else if (state.startTime && state.mode === 'NEO') {
                 patientInfoDisplay.className = 'bg-white px-3 py-2 rounded-xl shadow-lg text-xs font-mono border-2 bg-pink-50 border-pink-300';
-                html = `<div class="font-bold text-pink-800 mb-1 text-center text-sm">Neonatal Quick Reference</div>${infoGrid(neoInfoLines(), 'text-pink-900')}`;
+                html = weightPanelHtml('Neonatal Quick Reference', neoInfoLines(), true);
             }
+            // Redrawing must not wipe a weight that is being typed (the panel is redrawn when a cycle ends, for example)
+            const was = $('weight-change-input');
+            const typing = was ? { value: was.value, focused: document.activeElement === was } : null;
             patientInfoDisplay.innerHTML = html;
+            const now = $('weight-change-input');
+            if (typing && now) { now.value = typing.value; if (typing.focused) now.focus(); }
             patientInfoDisplay.classList.toggle('hidden', !html);
         };
 
@@ -1119,7 +1148,7 @@
                                     <input type="number" id="input-weight" placeholder="Weight (kg)" step="0.1" min="0.5" max="150" value="${state.patientWeight || ''}" class="p-2 border rounded w-1/3">
                                     <button data-action="calc-age" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded w-1/3 shadow">Calculate</button>
                                 </div>
-                                <p class="text-xs text-teal-700">Age estimates weight (APLS). Under 1 year: use decimals (0.5 = 6 months). Actual weight overrides the estimate.</p>
+                                <p class="text-xs text-teal-700">Age estimates weight (APLS, validated to 12 years). Under 1 year: use decimals (0.5 = 6 months). Actual weight overrides the estimate.</p>
                                 ${wetflagResultsHtml()}
                             </div>` : ''}
 
@@ -1491,8 +1520,32 @@
             $('sound-unlock').classList.toggle('hidden', !show);
         };
 
+        // Android app only: the app can report the phone's media volume and whether speech started. Beeps and
+        // spoken prompts both follow the media volume, so at zero the countdown would be silent with no sign of it.
+        const soundHealth = { muted: false, speechFailed: false, lastCheck: 0, shown: '' };
+        window.addEventListener('resus-speech-failed', () => { soundHealth.speechFailed = true; });
+        window.addEventListener('resus-speech-ok', () => { soundHealth.speechFailed = false; });
+        const updateSoundWarning = (now) => {
+            const app = window.ResusAndroid;
+            if (app && typeof app.mediaVolume === 'function' && Math.abs(now - soundHealth.lastCheck) >= 1500) {
+                soundHealth.lastCheck = now;
+                try { soundHealth.muted = Number(app.mediaVolume()) === 0; } catch (e) { soundHealth.muted = false; }
+            }
+            let msg = '';
+            if (sound.on && state.isArrestActive) {
+                if (soundHealth.muted) msg = 'Phone media volume is at zero: the countdown is silent. Turn the volume up.';
+                else if (soundHealth.speechFailed) msg = 'Spoken prompts are not working on this phone. Beeps and the screen flash still work.';
+            }
+            if (msg === soundHealth.shown) return;
+            soundHealth.shown = msg;
+            const el = $('sound-warning');
+            el.textContent = msg;
+            el.classList.toggle('hidden', !msg);
+        };
+
         const tick = () => {
             const now = Date.now();
+            updateSoundWarning(now);
             totalElapsedTimeElem.textContent = formatTime(arrestSeconds(now));
             totalLabel.textContent = state.rearrestTimes.length ? `Arrest Time (${state.rearrestTimes.length + 1} episodes)` : 'Arrest Time';
 
@@ -1577,6 +1630,7 @@
             const keep = { patientWeight: state.patientWeight, patientAge: state.patientAge, weightSource: state.weightSource, wetflag: state.wetflag };
             const mode = state.mode;
             state = { ...newState(mode), ...keep };
+            weightEditOpen = false;
             pendingRestore = null;
             state.isArrestActive = true;
             state.outcome = 'ONGOING';
@@ -1758,13 +1812,23 @@
         // ---------------------------------------------------------------------------
         // Weight entry
         // ---------------------------------------------------------------------------
+        // Log line for a weight changed after the episode started. Doses already given stay exactly as logged.
+        const weightChangeLog = (before, beforeSource) => {
+            if (!state.startTime) return;
+            if (before && before !== state.patientWeight) {
+                addLog(`Weight corrected: ${before} kg (${beforeSource || 'entered'}) → ${state.patientWeight} kg (${state.weightSource || 'entered'}). Doses recalculated from now; earlier doses stand as logged`, { type: 'weight' });
+            } else if (!before) weightLog();
+        };
+
         window.updatePaedsCalc = (val, type) => {
+            const before = state.patientWeight, beforeSource = state.weightSource;
             if (type === 'age') {
                 const a = parseFloat(val);
                 if (isNaN(a) || a < 0 || a > 18) { showToast('Enter an age between 0 and 18 years'); return; }
                 state.patientAge = a;
                 state.patientWeight = +estimateWeightFromAge(a).toFixed(1);
-                state.weightSource = 'estimated from age';
+                state.weightSource = a > WEIGHT_FORMULA_MAX_AGE ? 'estimated from age – formula not validated above 12 years' : 'estimated from age';
+                if (a > WEIGHT_FORMULA_MAX_AGE) showToast('Over 12 years: the age formula is a rough guide only. Enter the actual weight if you can.');
                 const wIn = $('input-weight');
                 if (wIn) wIn.value = state.patientWeight;
             } else {
@@ -1774,12 +1838,29 @@
                 state.weightSource = 'entered';
             }
             state.wetflag = paedsDoses(state.patientWeight, state.patientAge);
-            if (state.startTime) weightLog();
+            weightChangeLog(before, beforeSource);
+            weightEditOpen = false;
             const res = $('wetflag-results');
             if (res) res.outerHTML = wetflagResultsHtml();
             renderInterventionButtons();
+            if (state.startTime) renderGuidance(); // prompts on screen quote weight-based doses
             updatePatientInfoDisplay();
             renderSpecialCircs();
+            save();
+        };
+
+        // Newborn weight corrected during the resuscitation (it starts on an assumed 3.5 kg if none was entered)
+        const correctNeoWeight = (val) => {
+            const w = parseFloat(val);
+            if (isNaN(w) || w < 0.3 || w > 7) { showToast('Enter a neonatal weight between 0.3 and 7 kg'); return; }
+            const before = state.patientWeight, beforeSource = state.weightSource;
+            state.patientWeight = +w.toFixed(2);
+            state.weightSource = 'entered';
+            weightChangeLog(before, beforeSource);
+            weightEditOpen = false;
+            renderInterventionButtons();
+            updatePatientInfoDisplay();
+            renderGuidance();
             save();
         };
 
@@ -2057,6 +2138,26 @@
         roscBtn.addEventListener('click', handleRosc);
         rearrestBtn.addEventListener('click', handleRearrest);
         endArrestBtn.addEventListener('click', handleEndArrest);
+
+        // Weight correction during the episode (PLS and NLS), from the quick-reference panel
+        patientInfoDisplay.addEventListener('click', (e) => {
+            if (!state.isArrestActive) return;
+            if (e.target.closest('#weight-change-open')) {
+                weightEditOpen = true;
+                updatePatientInfoDisplay();
+                const input = $('weight-change-input');
+                if (input) input.focus();
+            } else if (e.target.closest('#weight-change-cancel')) {
+                weightEditOpen = false;
+                updatePatientInfoDisplay();
+            } else if (e.target.closest('#weight-change-set')) {
+                const val = $('weight-change-input').value;
+                if (state.mode === 'NEO') correctNeoWeight(val); else updatePaedsCalc(val, 'weight');
+            }
+        });
+        patientInfoDisplay.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.id === 'weight-change-input') $('weight-change-set').click();
+        });
 
         interventionsButtonsGrid.addEventListener('click', (e) => {
             if (!state.isArrestActive) return;
