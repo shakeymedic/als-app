@@ -211,6 +211,13 @@ for (const file of FILES) {
   let wf = await text(p, '#wetflag-results');
   check(wf.includes('1000 mcg') && wf.includes('capped at 1 mg') && wf.includes('300 mg') && wf.includes('adult dose'), 'paeds dose caps (adrenaline 1 mg, amiodarone 300 mg, energy)', wf);
   check(wf.includes('enter age for tube size'), 'no tube size shown when age unknown');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg, capped at 500 ml)') && wf.includes('Glucose 10%: 200 ml (2 ml/kg, capped at 200 ml)'), 'paeds volume caps at 120 kg (fluid 500 ml, glucose 200 ml)', wf);
+  await p.fill('#input-weight', '50'); await p.locator('#input-weight').blur();
+  wf = await text(p, '#wetflag-results');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg)') && wf.includes('Glucose 10%: 100 ml (2 ml/kg)'), 'paeds 50 kg: volumes not capped', wf);
+  await p.fill('#input-weight', '60'); await p.locator('#input-weight').blur();
+  wf = await text(p, '#wetflag-results');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg, capped at 500 ml)') && wf.includes('Glucose 10%: 120 ml (2 ml/kg)'), 'paeds 60 kg: fluid capped, glucose not', wf);
   await p.fill('#input-weight', '20'); await p.locator('#input-weight').blur();
   await p.click('#start-arrest-btn');
   await p.click('#rhythm-asys-btn');

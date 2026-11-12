@@ -445,7 +445,7 @@
                 paeds: () => 'Standard PLS. Consult a regional or national poisons centre (e.g. Toxbase); give antidotes where available. Exclude reversible causes, including electrolyte abnormalities. Be prepared to continue resuscitation for a prolonged period. Consider ECPR if conventional CPR is failing.' },
             { id: 'anaphylaxis', name: 'Anaphylaxis', guidance: 'Adrenaline 1mg IV (ALS doses). Aggressive IV fluids. Prolonged CPR.',
                 kg: true,
-                paeds: () => `Adrenaline IV/IO bolus, cardiac arrest dose: ${adrenalineDoseText()}. Aggressive fluid resuscitation: ${kgDose(10, 'ml')} boluses. Consider prolonged resuscitation / ECPR.` },
+                paeds: () => `Adrenaline IV/IO bolus, cardiac arrest dose: ${adrenalineDoseText()}. Aggressive fluid resuscitation: ${fluidBolusText()} boluses. Consider prolonged resuscitation / ECPR.` },
             { id: 'asthma', name: 'Asthma', guidance: 'Slow ventilation rate, prolonged expiration. Exclude tension pneumothorax.',
                 paeds: () => 'Ventilate with 100% oxygen. Exclude tension pneumothorax (needle thoracocentesis). Consider extracorporeal life support in near-fatal asthma.' },
             { id: 'drowning', name: 'Drowning', guidance: 'Hypoxic arrest: prioritise oxygenation and ventilation (5 initial rescue breaths). Consider hypothermia.',
@@ -480,6 +480,9 @@
         // The formulae are published for children up to 12 years; above that the estimate is a rough guide only.
         const WEIGHT_FORMULA_MAX_AGE = 12;
 
+        // Upper limits for the per-kg volumes, so a heavy teenager is not given more than an adult would be:
+        // fluid bolus 500 ml (the adult bolus used in ALS mode) and glucose 10% 200 ml (20 g, the top of the adult range).
+        const PAEDS_FLUID_MAX_ML = 500, PAEDS_GLUCOSE_MAX_ML = 200;
         const paedsDoses = (weight, age) => {
             const w = Number(weight);
             const energy = Math.round(w * 4);
@@ -502,8 +505,10 @@
                 adrCapped: w * 10 > 1000,
                 amiodarone: amio,
                 amioCapped: w * 5 > 300,
-                fluids: Math.round(w * 10),
-                glucose: Math.round(w * 2),
+                fluids: Math.min(Math.round(w * 10), PAEDS_FLUID_MAX_ML),
+                fluidsCapped: w * 10 > PAEDS_FLUID_MAX_ML,
+                glucose: Math.min(Math.round(w * 2), PAEDS_GLUCOSE_MAX_ML),
+                glucoseCapped: w * 2 > PAEDS_GLUCOSE_MAX_ML,
                 tube
             };
         };
@@ -521,6 +526,13 @@
             const per = `${perKg} ${unit}/kg${max !== null ? `, max ${max} ${unit}` : ''}`;
             if (!w) return per;
             return `${fmtDose(max !== null ? Math.min(w * perKg, max) : w * perKg)} ${unit} (${per})`;
+        };
+        // Fluid bolus text for the paediatric Special Circs cards: same cap as the Fluid button, mentioned only when it applies
+        const fluidBolusText = () => {
+            const wf = state.wetflag;
+            if (!wf) return '10 ml/kg';
+            const capped = wf.weight * 10 > PAEDS_FLUID_MAX_ML;
+            return `${capped ? PAEDS_FLUID_MAX_ML : fmtDose(wf.weight * 10)} ml (10 ml/kg${capped ? `, max ${PAEDS_FLUID_MAX_ML} ml` : ''})`;
         };
         const kgRange = (lo, hi, unit, max) => {
             const w = state.wetflag ? state.wetflag.weight : null;
@@ -548,8 +560,8 @@
                 `Energy: ${wf.energyText}`,
                 `Adrenaline: ${wf.adrenaline_mcg} mcg = ${wf.adrenaline_vol} ml of 1:10,000 (10 mcg/kg${wf.adrCapped ? ', capped at 1 mg' : ''})`,
                 `Amiodarone: ${wf.amiodarone} mg (5 mg/kg${wf.amioCapped ? ', capped at 300 mg' : ''})${paedsAmio2(wf) < wf.amiodarone ? `; 2nd dose ${paedsAmio2(wf)} mg (max 150 mg)` : ''}`,
-                `Fluid bolus: ${wf.fluids} ml (10 ml/kg)`,
-                `Glucose 10%: ${wf.glucose} ml (2 ml/kg)`,
+                `Fluid bolus: ${wf.fluids} ml (10 ml/kg${wf.fluidsCapped ? `, capped at ${PAEDS_FLUID_MAX_ML} ml` : ''})`,
+                `Glucose 10%: ${wf.glucose} ml (2 ml/kg${wf.glucoseCapped ? `, capped at ${PAEDS_GLUCOSE_MAX_ML} ml` : ''})`,
                 wf.tube ? `ETT: cuffed ${wf.tube.cuffed} mm (uncuffed ${wf.tube.uncuffed} mm)${wf.tube.depth ? ` @ ~${wf.tube.depth} cm` : ''}` : 'ETT: enter age for tube size'
             ];
         };
@@ -1109,8 +1121,8 @@
                 const amioDose = state.counts.amiodarone === 0 ? wf.amiodarone : paedsAmio2(wf);
                 const amioMax = state.counts.amiodarone === 0 ? (wf.amioCapped ? 300 : 0) : (wf.weight * 5 > 150 ? 150 : 0);
                 html += drugBtn('amiodarone', `Amiodarone ${amioDose} mg (5 mg/kg${amioMax ? `, max ${amioMax} mg` : ''})`, 'bg-orange-500 hover:bg-orange-600', `Amiodarone ${amioDose}mg`, amioMax ? '(max dose)' : '(5mg/kg)');
-                html += drugBtn('fluids', `Fluid ${wf.fluids} ml (10 ml/kg)`, 'bg-blue-500 hover:bg-blue-600', `Fluid ${wf.fluids}ml`, '(10ml/kg)');
-                html += drugBtn('glucose', `Glucose 10% ${wf.glucose} ml (2 ml/kg)`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${wf.glucose}ml`, '(10%, 2ml/kg)');
+                html += drugBtn('fluids', `Fluid ${wf.fluids} ml (10 ml/kg${wf.fluidsCapped ? `, max ${PAEDS_FLUID_MAX_ML} ml` : ''})`, 'bg-blue-500 hover:bg-blue-600', `Fluid ${wf.fluids}ml`, wf.fluidsCapped ? '(max dose)' : '(10ml/kg)');
+                html += drugBtn('glucose', `Glucose 10% ${wf.glucose} ml (2 ml/kg${wf.glucoseCapped ? `, max ${PAEDS_GLUCOSE_MAX_ML} ml` : ''})`, 'bg-yellow-500 hover:bg-yellow-600', `Glucose ${wf.glucose}ml`, wf.glucoseCapped ? '(10%, max dose)' : '(10%, 2ml/kg)');
             } else if (state.mode === 'PAEDS') {
                 html += `
                     <div class="col-span-2 text-center text-sm text-teal-800 bg-teal-50 border border-teal-200 rounded-lg p-3">
