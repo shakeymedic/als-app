@@ -200,12 +200,24 @@ for (const file of FILES) {
   check(await ageWeight(6) === 25, 'APLS weight 6 yr = 25 kg');
   check(await ageWeight(10) === 37, 'APLS weight 10 yr = 37 kg');
   check(await ageWeight(11) === 40, 'APLS weight 11 yr = 40 kg');
+  check(await ageWeight(5.1) === 18.2, 'APLS weight 5.1 yr = 18.2 kg (no jump just above 5)');
+  check(await ageWeight(5.9) === 19.8, 'APLS weight 5.9 yr uses the 1-5 year formula');
+  check(await S(p, () => state.weightSource) === 'estimated from age', 'age 12 or under: plain "estimated from age"');
+  check(await ageWeight(15) === 52 && (await S(p, () => state.weightSource)).includes('not validated above 12'), 'over 12 years: estimate flagged as not validated');
+  check((await text(p, '#toast')).includes('Over 12 years'), 'over 12 years: warning shown');
   p = await fresh();
   await p.click('button[data-mode="PAEDS"]');
   await p.fill('#input-weight', '120'); await p.locator('#input-weight').blur();
   let wf = await text(p, '#wetflag-results');
   check(wf.includes('1000 mcg') && wf.includes('capped at 1 mg') && wf.includes('300 mg') && wf.includes('adult dose'), 'paeds dose caps (adrenaline 1 mg, amiodarone 300 mg, energy)', wf);
   check(wf.includes('enter age for tube size'), 'no tube size shown when age unknown');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg, capped at 500 ml)') && wf.includes('Glucose 10%: 200 ml (2 ml/kg, capped at 200 ml)'), 'paeds volume caps at 120 kg (fluid 500 ml, glucose 200 ml)', wf);
+  await p.fill('#input-weight', '50'); await p.locator('#input-weight').blur();
+  wf = await text(p, '#wetflag-results');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg)') && wf.includes('Glucose 10%: 100 ml (2 ml/kg)'), 'paeds 50 kg: volumes not capped', wf);
+  await p.fill('#input-weight', '60'); await p.locator('#input-weight').blur();
+  wf = await text(p, '#wetflag-results');
+  check(wf.includes('Fluid bolus: 500 ml (10 ml/kg, capped at 500 ml)') && wf.includes('Glucose 10%: 120 ml (2 ml/kg)'), 'paeds 60 kg: fluid capped, glucose not', wf);
   await p.fill('#input-weight', '20'); await p.locator('#input-weight').blur();
   await p.click('#start-arrest-btn');
   await p.click('#rhythm-asys-btn');
@@ -216,6 +228,62 @@ for (const file of FILES) {
   await p.click('#view-summary-btn');
   check((await text(p, '#summary-content')).includes('Glucose ×1'), 'glucose appears in summary totals');
   await closeModal(p);
+
+  // --- Weight corrected during a paediatric arrest: logged, later doses recalculated, earlier doses stand
+  check(await p.isVisible('#weight-change-open'), 'PLS: change-weight button shown during the arrest');
+  check((await text(p, '#patient-info-display')).includes('Weight: 20 kg (entered)'), 'PLS: weight in use shown in the quick reference');
+  await p.click('#weight-change-open');
+  await p.fill('#weight-change-input', '999'); await p.click('#weight-change-set');
+  check(await S(p, () => state.patientWeight) === 20, 'PLS: impossible weight refused');
+  await p.fill('#weight-change-input', '2');
+  await S(p, () => updateUI());
+  check(await p.inputValue('#weight-change-input') === '2', 'PLS: a redraw does not wipe the weight being typed');
+  await p.fill('#weight-change-input', '30'); await p.click('#weight-change-set');
+  l = await log(p);
+  check(l.some(m => m.startsWith('Weight corrected: 20 kg (entered) → 30 kg (entered)')), 'PLS: weight correction logged with old and new weight', JSON.stringify(l.slice(-3)));
+  check(l.includes('Fluid 200 ml (10 ml/kg) given'), 'PLS: dose given before the correction stays as logged');
+  check((await text(p, '#patient-info-display')).includes('300 mcg'), 'PLS: quick reference recalculated for the new weight');
+  check((await text(p, '#interventions-buttons-grid')).includes('Adrenaline 300mcg'), 'PLS: drug buttons recalculated for the new weight');
+  check((await text(p, '#guidance-content')).includes('Give adrenaline 300 mcg'), 'PLS: prompt on screen updates to the corrected weight at once');
+  await p.click('button[data-drug="fluids"]');
+  check((await log(p)).includes('Fluid 300 ml (10 ml/kg) given'), 'PLS: doses after the correction use the new weight');
+  check(p.errs.length === 0, 'no page errors (PLS weight correction)', p.errs.join(' | '));
+
+  // --- Weight corrected during neonatal resuscitation (starts on an assumed 3.5 kg)
+  p = await fresh();
+  await p.click('button[data-mode="NEO"]');
+  await p.click('#start-arrest-btn');
+  check((await text(p, '#patient-info-display')).includes('Weight: 3.5 kg (assumed'), 'NLS: assumed weight shown in the quick reference');
+  await p.click('#weight-change-open');
+  await p.fill('#weight-change-input', '20'); await p.click('#weight-change-set');
+  check(await S(p, () => state.patientWeight) === 3.5, 'NLS: weight outside 0.3-7 kg refused');
+  await p.fill('#weight-change-input', '1.2'); await p.click('#weight-change-set');
+  check((await log(p)).some(m => m.startsWith('Weight corrected: 3.5 kg (assumed – not entered) → 1.2 kg (entered)')), 'NLS: weight correction logged');
+  check((await text(p, '#patient-info-display')).includes('24 mcg'), 'NLS: quick reference recalculated (20 mcg/kg)');
+  check((await text(p, '#interventions-buttons-grid')).includes('Adrenaline 0.24ml'), 'NLS: drug buttons recalculated');
+  { const ctxN = p.context(); const pN = await ctxN.newPage(); pN.errs = []; pN.on('pageerror', e => pN.errs.push(e.message)); await pN.goto(url);
+    check(await S(pN, () => state.patientWeight) === 1.2, 'NLS: corrected weight survives a page reload'); check(pN.errs.length === 0, 'no page errors (NLS reload)', pN.errs.join(' | ')); await pN.close(); }
+  check(p.errs.length === 0, 'no page errors (NLS weight correction)', p.errs.join(' | '));
+
+  // --- Android app: warn when the media volume is at zero or speech did not start (the app reports both)
+  p = await fresh();
+  await p.click('#start-arrest-btn');
+  await p.clock.runFor(2000);
+  check(await p.isHidden('#sound-warning'), 'no sound warning outside the Android app');
+  await S(p, () => { window.__vol = 0; window.ResusAndroid = { mediaVolume: () => window.__vol }; });
+  await p.clock.runFor(2500);
+  check((await text(p, '#sound-warning')).includes('volume is at zero'), 'Android: warning when media volume is zero');
+  await S(p, () => { window.__vol = 40; });
+  await p.clock.runFor(2500);
+  check(await p.isHidden('#sound-warning'), 'Android: warning clears when the volume is turned up');
+  await S(p, () => window.dispatchEvent(new Event('resus-speech-failed')));
+  await p.clock.runFor(500);
+  check((await text(p, '#sound-warning')).includes('Spoken prompts are not working'), 'Android: warning when speech fails to start');
+  await p.click('#sound-btn');
+  await p.clock.runFor(500);
+  check(await p.isHidden('#sound-warning'), 'no sound warning when countdown sound is switched off');
+  await p.click('#sound-btn');
+  check(p.errs.length === 0, 'no page errors (sound warning)', p.errs.join(' | '));
 
   // --- Paediatric shockable (RCUK 2025 PLS): 2nd amiodarone max 150 mg; energy escalates from the 5th shock (RCUK 2025 PLS algorithm)
   p = await fresh();
